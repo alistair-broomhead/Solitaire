@@ -13,7 +13,7 @@
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    inkscape:export-ydpi="2540"
    inkscape:export-xdpi="2540"
-   inkscape:export-filename="C:\Users\Al\Documents\Solitaire\Assets\Cards\Outline.png"
+   inkscape:export-filename="C:\Users\Al\Documents\Solitaire\Assets\Images\Cards\Outline.png"
    sodipodi:docname="Card.svg"
    inkscape:version="0.92.2 (5c3e80d, 2017-08-06)"
    id="svg8"
@@ -448,8 +448,8 @@
      showgrid="false"
      inkscape:current-layer="g11324"
      inkscape:document-units="mm"
-     inkscape:cy="131.90591"
-     inkscape:cx="26.811737"
+     inkscape:cy="96.550571"
+     inkscape:cx="45.339852"
      inkscape:zoom="2.7718586"
      inkscape:pageshadow="2"
      inkscape:pageopacity="0.0"
@@ -494,7 +494,7 @@
      id="g11324"
      transform="translate(0,-237)">
     <rect
-       style="opacity:1;fill:#318231;fill-opacity:0.03333334;fill-rule:nonzero;stroke:url(#radialGradient6117);stroke-width:1;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:markers stroke fill"
+       style="opacity:1;fill:#318231;fill-opacity:0.50196081;fill-rule:nonzero;stroke:url(#radialGradient6117);stroke-width:1;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:markers stroke fill"
        id="rect11322"
        width="39.018089"
        height="58.656315"
