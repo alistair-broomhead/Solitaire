@@ -22,7 +22,7 @@ namespace Solitaire.Game.Objects.Position
                 Destroy(gameObject);
             }
 
-            //Sets this to not be destroyed when reloading scene
+            // Sets this to not be destroyed when reloading scene
             DontDestroyOnLoad(gameObject);
             
             foreach (Position pos in instances)
