@@ -3,6 +3,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System;
 using UnityEngine.UI;
+using Solitaire.Game.IListExtensions;
 
 namespace Solitaire.Game
 {
@@ -127,7 +128,21 @@ namespace Solitaire.Game
 
         public static void RedrawSorted(List<Card>[] stacks)
         {
-            // TODO
+            for (int i = 0; i < stacks.Length; i++)
+            {
+                var card = stacks[i].Last();
+
+                if (card != null)
+                {
+                    CardBehaviour behaviour = sortedPositions[i].GetComponentInChildren<CardBehaviour>();
+
+                    if (behaviour == null) behaviour = CreateCard();
+
+                    ChangeCard(card, sortedPositions[i], behaviour);
+                }
+                    
+            }
+                
         }
 
         private static void ChangeCard(Card card, GameObject position, CardBehaviour behaviour)
