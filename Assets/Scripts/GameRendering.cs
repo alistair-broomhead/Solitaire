@@ -130,19 +130,33 @@ namespace Solitaire.Game
         {
             for (int i = 0; i < stacks.Length; i++)
             {
-                var card = stacks[i].Last();
+                var stack = stacks[i];
+                var behaviours = sortedPositions[i].GetComponentsInChildren<CardBehaviour>();
 
-                if (card != null)
+                int numSorted = stack.Count;
+                int numRender = Math.Min(2, numSorted);
+
+                for (int j = numRender; j < behaviours.Length; j++)
+                    GameObject.Destroy(behaviours[j]);
+
+                int stackFrom = Math.Max(0, numSorted - 2);
+
+                for (int j = 0; j < numRender; j++)
                 {
-                    CardBehaviour behaviour = sortedPositions[i].GetComponentInChildren<CardBehaviour>();
+                    Card card = stack[j + stackFrom];
 
-                    if (behaviour == null) behaviour = CreateCard();
+                    CardBehaviour behaviour;
+
+                    if (j < behaviours.Length)
+                        behaviour = behaviours[j];
+                    else
+                        behaviour = CreateCard();
 
                     ChangeCard(card, sortedPositions[i], behaviour);
-                }
-                    
-            }
-                
+
+                    behaviour.acceptMouseEvents = (j == numRender - 1);
+                }   
+            }   
         }
 
         private static void ChangeCard(Card card, GameObject position, CardBehaviour behaviour)
