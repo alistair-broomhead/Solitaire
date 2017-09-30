@@ -27,32 +27,8 @@ namespace Solitaire.Game
         [SerializeField]
         private List<Card> exposed;
 
-        [SerializeField]
-        private List<Card> stack1 = new List<Card>();
-        [SerializeField]
-        private List<Card> stack2 = new List<Card>();
-        [SerializeField]
-        private List<Card> stack3 = new List<Card>();
-        [SerializeField]
-        private List<Card> stack4 = new List<Card>();
-        [SerializeField]
-        private List<Card> stack5 = new List<Card>();
-        [SerializeField]
-        private List<Card> stack6 = new List<Card>();
-        [SerializeField]
-        private List<Card> stack7 = new List<Card>();
-
-        [SerializeField]
-        private List<Card> sorted1 = new List<Card>();
-        [SerializeField]
-        private List<Card> sorted2 = new List<Card>();
-        [SerializeField]
-        private List<Card> sorted3 = new List<Card>();
-        [SerializeField]
-        private List<Card> sorted4 = new List<Card>();
-
-        private List<Card>[] stacks;
-        private List<Card>[] sorted;
+        private List<Card>[] stacks = new List<Card>[7];
+        private List<Card>[] sorted = new List<Card>[4];
 
         private string shoeTextureName;
 
@@ -65,10 +41,10 @@ namespace Solitaire.Game
             exposed = new List<Card>();
 
             for (int i = 0; i < sorted.Length; i++)
-                sorted[i].Clear();
+                sorted[i] = new List<Card>();
 
             for (int i = 0; i < stacks.Length; i++)
-                stacks[i].Clear();
+                stacks[i] = new List<Card>();
             
             foreach (CardValue v in Enum.GetValues(typeof(CardValue)))
                 foreach (Suit s in Enum.GetValues(typeof(Suit)))
@@ -78,23 +54,12 @@ namespace Solitaire.Game
         // Use this for initialization
         void Start()
         {
-            GameRendering.SetPositions(exposedPositions, stackPositions, sortedPositions, shoeTop);
-
-            stacks = new List<Card>[7] {
-                stack1,
-                stack2,
-                stack3,
-                stack4,
-                stack5,
-                stack6,
-                stack7
-            };
-            sorted = new List<Card>[4] {
-                sorted1,
-                sorted2,
-                sorted3,
-                sorted4
-            };
+            GameRendering.SetPositions(
+                exposedPositions, 
+                stackPositions, 
+                sortedPositions, 
+                shoeTop
+            );
 
             Reset();
             shoe.Shuffle();
