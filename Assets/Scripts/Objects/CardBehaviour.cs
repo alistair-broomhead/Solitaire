@@ -3,25 +3,29 @@ using UnityEngine.EventSystems;
 using System;
 using Solitaire.Game.Objects;
 using System.Collections.Generic;
+using System;
+using UnityEngine.UI;
 
 namespace Solitaire.Game.Objects.Card {
 
     [System.Serializable]
-    public class Card : MonoBehaviour, IMouseHandled
+    public class CardBehaviour : MonoBehaviour, IMouseHandled
     {
         public List<Transform> Transforms { get { return transforms; } }
-        public List<Transform> transforms;
-        public MouseHandler<Card> handler;
+        [SerializeField]
+        private List<Transform> transforms;
+        [SerializeField]
+        private MouseHandler<CardBehaviour> handler;
         
         // Is this object currently accepting mouse events?
         public bool acceptMouseEvents = false;
 
-        void Awake()
+        public void Awake()
         {
             Canvas canvas = GetComponentInParent<Canvas>();
 
             if (canvas != null)
-                handler = new MouseHandler<Card>(this, canvas);
+                handler = new MouseHandler<CardBehaviour>(this, canvas);
 
             transforms = new List<Transform>();
             if (acceptMouseEvents) transforms.Add(transform);
