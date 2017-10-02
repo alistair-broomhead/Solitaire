@@ -104,7 +104,7 @@ namespace Solitaire.Game.Move
 
             RemoveFromHistory(newState);
 
-            while (newState.exposed.Count > 0)
+            while (newState.shoe.Count > 0)
                 newState.exposed.Add(newState.shoe.Pop());
 
             return newState;
