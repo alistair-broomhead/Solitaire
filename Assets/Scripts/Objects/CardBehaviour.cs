@@ -90,7 +90,12 @@ namespace Solitaire.Game.Objects.Card {
         {
             var position = PositionRegistry.PositionAt(point);
 
-            return game.MoveCardToPosition(gameCard, position);
+            bool valid = game.MoveCardToPosition(gameCard, position);
+
+            if (valid)
+                Destroy(gameObject);
+
+            return valid;
         }
 
         private RectTransform MyRectTransform

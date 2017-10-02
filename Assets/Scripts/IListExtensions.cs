@@ -41,5 +41,12 @@ namespace Solitaire.Game.IListExtensions
 
             return other;
         }
+        public static T Last<T>(this List<T> list)
+        {
+            if (list.Count == 0)
+                return default(T);
+
+            return list[list.Count - 1];
+        }
     }
 }

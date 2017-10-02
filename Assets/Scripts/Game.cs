@@ -89,6 +89,21 @@ namespace Solitaire.Game
 
             Debug.LogFormat(this, "Attempting to move {0} to {1}", card.ToString(), position);
 
+            for (int i = 0; i < sortedPositions.Length; i++)
+                if (sortedPositions[i] == position.gameObject)
+                    for (int j = 0; j < state.stacks.Length; j++)
+                        if (state.stacks[j].Last() == card)
+                        {
+                            bool valid;
+                            var move = new Move.SortCardFromStack(j, i);
+                            state = move.Apply(state, out valid);
+
+                            if (valid)
+                                GameRendering.RedrawAll(state);
+
+                            return valid;
+                        }
+
             return false;
         }
 

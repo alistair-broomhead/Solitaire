@@ -136,7 +136,7 @@ namespace Solitaire.Game
                 int numRender = Math.Min(2, numSorted);
 
                 for (int j = numRender; j < behaviours.Length; j++)
-                    GameObject.Destroy(behaviours[j]);
+                    GameObject.Destroy(behaviours[j].gameObject);
 
                 int stackFrom = Math.Max(0, numSorted - 2);
 

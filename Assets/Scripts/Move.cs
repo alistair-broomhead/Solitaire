@@ -110,4 +110,86 @@ namespace Solitaire.Game.Move
             return newState;
         }
     }
+
+    [Serializable]
+    public class SortCardFromStack : MoveType
+    {
+        private int stack;
+        private int sorted;
+        private bool fromFaceDown = false;
+
+        public override GameState Apply(GameState initial)
+        {
+            var newState = new GameState(initial);
+
+            List<Card> fromStack = newState.stacks[stack];
+            List<Card> toSorted = newState.sorted[sorted];
+
+            toSorted.Add(fromStack.Pop());
+
+            if (
+                (fromStack.Count > 0) &&
+                (!fromStack[fromStack.Count - 1].FaceUp)
+            )
+            {
+                fromFaceDown = true;
+                fromStack[fromStack.Count - 1].Flip();
+            }
+
+            newState.history.Add(this);
+
+            return newState;
+        }
+
+        public override GameState Reverse(GameState initial)
+        {
+            var newState = new GameState(initial);
+
+            List<Card> fromStack = newState.stacks[stack];
+            List<Card> toSorted = newState.sorted[sorted];
+
+            if (fromFaceDown)
+                fromStack[fromStack.Count - 1].Flip();
+
+            fromStack.Add(toSorted.Pop());
+
+            RemoveFromHistory(newState);
+
+            return newState;
+        }
+
+        public override bool Valid(GameState initial)
+        {
+            var fromStack = initial.stacks[stack];
+
+            if (fromStack.Count == 0)
+                return false;
+
+            var card = fromStack[fromStack.Count - 1];
+
+            var toSorted = initial.sorted[sorted];
+            int numSorted = toSorted.Count;
+
+            if (card.Value == CardValue.Ace)
+                return numSorted == 0;
+            
+            if (numSorted == 0)
+                return false;
+
+            Card topCard = toSorted[numSorted - 1];
+
+            if (topCard.Suit != card.Suit)
+                return false;
+
+            int valueDiff = (int)card.Value - (int)topCard.Value;
+
+            return valueDiff == 1;
+        }
+
+        public SortCardFromStack(int fromStackIndex, int toSortedIndex)
+        {
+            stack = fromStackIndex;
+            sorted = toSortedIndex;
+        }
+    }
 }
