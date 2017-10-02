@@ -1,5 +1,4 @@
 ﻿using Solitaire.Game.IListExtensions;
-using Solitaire.Game.Objects.Position;
 using Solitaire.Game.Objects.Card;
 using UnityEngine;
 using System.Collections.Generic;
@@ -7,7 +6,6 @@ using System;
 
 namespace Solitaire.Game
 {
-
     [Serializable]
     public class Game : MonoBehaviour
     {
@@ -23,12 +21,7 @@ namespace Solitaire.Game
         private GameObject shoeTop;
 
         [SerializeField]
-        private List<Card> shoe;
-        [SerializeField]
-        private List<Card> exposed;
-
-        private List<Card>[] stacks = new List<Card>[7];
-        private List<Card>[] sorted = new List<Card>[4];
+        private GameState state;
 
         private string shoeTextureName;
 
@@ -37,18 +30,7 @@ namespace Solitaire.Game
             foreach (CardBehaviour card in GetComponentsInChildren<CardBehaviour>())
                 Destroy(card.gameObject);
 
-            shoe = new List<Card>();
-            exposed = new List<Card>();
-
-            for (int i = 0; i < sorted.Length; i++)
-                sorted[i] = new List<Card>();
-
-            for (int i = 0; i < stacks.Length; i++)
-                stacks[i] = new List<Card>();
-            
-            foreach (CardValue v in Enum.GetValues(typeof(CardValue)))
-                foreach (Suit s in Enum.GetValues(typeof(Suit)))
-                    shoe.Add(new Card(s, v));
+            state = new GameState();
         }
 
         // Use this for initialization
@@ -62,17 +44,17 @@ namespace Solitaire.Game
             );
 
             Reset();
-            shoe.Shuffle();
+            state.shoe.Shuffle();
 
-            for (int i = 0; i < stacks.Length; i++)
-                for (int j = i; j < stacks.Length; j++)
+            for (int i = 0; i < state.stacks.Length; i++)
+                for (int j = i; j < state.stacks.Length; j++)
                 {
-                    Card card = shoe.Pop();
+                    Card card = state.shoe.Pop();
 
                     if (i < j)
                         card.Flip();
 
-                    stacks[j].Add(card);
+                    state.stacks[j].Add(card);
                 }
 
             RedrawAll();
@@ -80,35 +62,35 @@ namespace Solitaire.Game
 
         public void OnShoeClick()
         {
-            if (shoe.Count == 0)
+            if (state.shoe.Count == 0)
                 ResetShoe();
             else
                 Deal();
 
-            GameRendering.RedrawExposed(exposed);
-            GameRendering.RedrawShoe(shoe);
+            GameRendering.RedrawExposed(state.exposed);
+            GameRendering.RedrawShoe(state.shoe);
         }
         private void ResetShoe() {
-            shoe = exposed;
-            shoe.Reverse();
-            exposed = new List<Card>();
+            state.shoe = state.exposed;
+            state.shoe.Reverse();
+            state.exposed = new List<Card>();
         }
 
         private void Deal()
         {
-            int minIndex = Math.Max(0, shoe.Count - numToDeal);
+            int minIndex = Math.Max(0, state.shoe.Count - numToDeal);
 
-            for (int i = shoe.Count - 1; i >= minIndex; i--)
+            for (int i = state.shoe.Count - 1; i >= minIndex; i--)
             {
-                exposed.Add(shoe[i]);
-                shoe.RemoveAt(i);
+                state.exposed.Add(state.shoe[i]);
+                state.shoe.RemoveAt(i);
             }
 
         }
 
         private void RedrawAll()
         {
-            GameRendering.RedrawAll(shoe, exposed, stacks, sorted);
+            GameRendering.RedrawAll(state);
         }
     }
 }

@@ -8,8 +8,7 @@ using Solitaire.Game.IListExtensions;
 namespace Solitaire.Game
 {
     internal static class GameRendering
-    {
-
+    { 
         private static GameObject[] exposedPositions;
         private static GameObject[] stackPositions;
         private static GameObject[] sortedPositions;
@@ -25,12 +24,12 @@ namespace Solitaire.Game
             shoeTop = shoe;
         }
 
-        public static void RedrawAll(List<Card> shoe, List<Card> exposed, List<Card>[] stacks, List<Card>[] sorted)
+        public static void RedrawAll(GameState state)
         {
-            RedrawShoe(shoe);
-            RedrawExposed(exposed);
-            RedrawStacks(stacks);
-            RedrawSorted(sorted);
+            RedrawShoe(state.shoe);
+            RedrawExposed(state.exposed);
+            RedrawStacks(state.stacks);
+            RedrawSorted(state.sorted);
         }
 
         public static void RedrawShoe(List<Card> shoe)
