@@ -3,6 +3,7 @@ using Solitaire.Game.Objects.Card;
 using UnityEngine;
 using System.Collections.Generic;
 using System;
+using Solitaire.Game.Objects.Position;
 
 namespace Solitaire.Game
 {
@@ -76,6 +77,21 @@ namespace Solitaire.Game
             GameRendering.RedrawExposed(state.exposed);
             GameRendering.RedrawShoe(state.shoe);
         }
+
+        public void MoveCard(Card card)
+        {
+            Debug.LogFormat(this, "Attempting to move {0}", card.ToString());
+        }
+
+        public bool MoveCardToPosition(Card card, Position position)
+        {
+            if (position == null) return false;
+
+            Debug.LogFormat(this, "Attempting to move {0} to {1}", card.ToString(), position);
+
+            return false;
+        }
+
         private void ResetShoe()
         {
             ApplyMove(new Move.ResetShoe());

@@ -81,5 +81,19 @@ namespace Solitaire.Game.Objects.Card
             suit = cardSuit;
             val = cardValue;
         }
+
+        public string ToString()
+        {
+            string upOrDown;
+            if (faceUp)
+                upOrDown = "up";
+            else
+                upOrDown = "down";
+
+            return string.Format(
+                "{0} of {1} (face {2})",
+                val, suit, upOrDown
+            );
+        }
     }
 }

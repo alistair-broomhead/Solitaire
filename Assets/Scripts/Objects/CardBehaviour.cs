@@ -3,6 +3,7 @@ using UnityEngine.EventSystems;
 using System.Collections.Generic;
 using System;
 using UnityEngine.UI;
+using Solitaire.Game.Objects.Position;
 
 namespace Solitaire.Game.Objects.Card {
 
@@ -17,11 +18,14 @@ namespace Solitaire.Game.Objects.Card {
         [SerializeField]
         internal Card gameCard;
 
+        private Game game;
+
         // Is this object currently accepting mouse events?
         public bool acceptMouseEvents = false;
 
         public void Awake()
         {
+            game = GetComponentInParent<Game>();
             Canvas canvas = GetComponentInParent<Canvas>();
 
             if (canvas != null)
@@ -79,21 +83,14 @@ namespace Solitaire.Game.Objects.Card {
 
         public void OnDoubleClick(PointerEventData eventData)
         {
-            Debug.LogFormat("Double Click @ {0}", eventData);
-        }
-
-        public bool OnMove(PointerEventData eventData)
-        {
-            Debug.LogFormat("Move @ {0}", eventData);
-
-            return false;
+            game.MoveCard(gameCard);
         }
 
         public bool OnMove(Vector2 point)
         {
-            Debug.LogFormat("Move @ {0}", point);
+            var position = PositionRegistry.PositionAt(point);
 
-            return false;
+            return game.MoveCardToPosition(gameCard, position);
         }
 
         private RectTransform MyRectTransform

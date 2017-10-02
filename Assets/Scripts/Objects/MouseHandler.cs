@@ -130,7 +130,7 @@ namespace Solitaire.Game.Objects
             var transforms = behaviour.Transforms;
 
             for (int i = 0; i < transforms.Count; i++)
-                transforms[i].parent = fromPositions[i];
+                transforms[i].SetParent(fromPositions[i]);
 
             DateTime currentClickEnd = DateTime.Now;
             TimeSpan sinceLastClick = currentClickEnd - lastClicked;
@@ -162,10 +162,7 @@ namespace Solitaire.Game.Objects
             transform.position = leftPoint;
         }
 
-        private void HandleClick(PointerEventData eventData)
-        {
-            Debug.LogFormat("Click @ {0}", eventData);
-        }
+        private void HandleClick(PointerEventData eventData) {}
 
         private void HandleDoubleClick(PointerEventData eventData)
         {

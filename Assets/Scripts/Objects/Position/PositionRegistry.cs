@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -15,12 +16,10 @@ namespace Solitaire.Game.Objects.Position
         {
             positionToShow = new List<Position>();
 
-            if (instance == null) instance = this;
+            if (instance == null)
+                instance = this;
             else if (instance != this)
-            {
-
                 Destroy(gameObject);
-            }
 
             // Sets this to not be destroyed when reloading scene
             DontDestroyOnLoad(gameObject);
@@ -50,19 +49,41 @@ namespace Solitaire.Game.Objects.Position
             return a.name.CompareTo(b.name);
         }
 
-        public static Position PositionAt(Vector2 screenPostion)
+        public static Position PositionAt(Vector2 worldPosition)
         {
             foreach (Position instance in instances)
-                if (TransformCollidesWithPoint(instance.Transform, screenPostion))
+                if (ContainsPoint(instance.gameObject, worldPosition))
                     return instance;
 
             // Will need to check for this wherever it is called
             return null;
         }
 
-        private static bool TransformCollidesWithPoint(RectTransform transform, Vector2 point)
+        private static bool ContainsPoint(GameObject position, Vector2 point)
         {
-            throw new System.NotImplementedException();
+            RectTransform rectTransform = position.transform as RectTransform;
+            Vector3[] corners = new Vector3[4];
+            rectTransform.GetWorldCorners(corners);
+
+            float minX = float.MaxValue;
+            float minY = float.MaxValue;
+            float maxX = float.MinValue;
+            float maxY = float.MinValue;
+
+            foreach (Vector3 corner in corners)
+            {
+                minX = Mathf.Min(minX, corner.x);
+                minY = Mathf.Min(minY, corner.y);
+                maxX = Mathf.Max(maxX, corner.x);
+                maxY = Mathf.Max(maxY, corner.y);
+            }
+
+            return (
+                minX <= point.x &&
+                minY <= point.y &&
+                maxX >= point.x &&
+                maxY >= point.y
+            );
         }
     }
 }
