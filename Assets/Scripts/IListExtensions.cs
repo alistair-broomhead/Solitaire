@@ -32,5 +32,14 @@ namespace Solitaire.Game.IListExtensions
         {
             return list.PopAt(list.Count - 1);
         }
+        public static List<T> Copy<T>(this List<T> list)
+        {
+            var other = new List<T>();
+
+            foreach (T item in list)
+                other.Add(item);
+
+            return other;
+        }
     }
 }

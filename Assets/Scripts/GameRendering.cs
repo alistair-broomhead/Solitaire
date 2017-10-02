@@ -60,8 +60,6 @@ namespace Solitaire.Game
         {
             int numCards = Math.Min(3, exposed.Count);
 
-            if (numCards == 0) return;
-
             int minExposed = exposed.Count - numCards;
             int minPos = 3 - numCards;
 
@@ -72,6 +70,8 @@ namespace Solitaire.Game
                 if (behaviour != null)
                     GameObject.Destroy(behaviour.gameObject);
             }
+
+            if (numCards == 0) return;
 
             for (int i = 0; i < numCards; i++)
             {

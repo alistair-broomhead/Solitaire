@@ -70,20 +70,44 @@ namespace Solitaire.Game
             GameRendering.RedrawExposed(state.exposed);
             GameRendering.RedrawShoe(state.shoe);
         }
-        private void ResetShoe() {
-            state.shoe = state.exposed;
-            state.shoe.Reverse();
-            state.exposed = new List<Card>();
+        private void ResetShoe()
+        {
+            ApplyMove(new Move.ResetShoe());
         }
 
         private void Deal()
         {
-            int minIndex = Math.Max(0, state.shoe.Count - numToDeal);
+            int numCards = Math.Min(state.shoe.Count, numToDeal);
+            ApplyMove(new Move.TakeFromShoe(numCards));
+        }
 
-            for (int i = state.shoe.Count - 1; i >= minIndex; i--)
+        private void ApplyMove(Move.MoveType move)
+        {
+            bool valid;
+
+            state = move.Apply(state, out valid);
+
+            if (valid)
             {
-                state.exposed.Add(state.shoe[i]);
-                state.shoe.RemoveAt(i);
+                Debug.LogFormat(this, "{0} was valid", move);
+                RedrawAll();
+            }
+            else
+                Debug.LogErrorFormat(this, "{0} was invalid!", move);
+        }
+
+        public void Undo()
+        {
+            int takenMoves = state.history.Count;
+
+            if (takenMoves > 0)
+            {
+                var move = state.history[takenMoves - 1];
+                state = move.Reverse(state);
+
+                Debug.LogFormat(this, "Reversed {0}", move);
+
+                RedrawAll();
             }
 
         }
