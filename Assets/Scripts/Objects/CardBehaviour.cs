@@ -13,7 +13,7 @@ namespace Solitaire.Game.Objects.Card {
         [SerializeField]
         private List<Transform> transforms;
         [SerializeField]
-        private MouseHandler<CardBehaviour> handler;
+        private MouseHandler handler;
         [SerializeField]
         internal Card gameCard;
 
@@ -25,7 +25,7 @@ namespace Solitaire.Game.Objects.Card {
             Canvas canvas = GetComponentInParent<Canvas>();
 
             if (canvas != null)
-                handler = new MouseHandler<CardBehaviour>(this, canvas);
+                handler = new MouseHandler(this, canvas);
 
             transforms = new List<Transform>();
             if (acceptMouseEvents) transforms.Add(transform);

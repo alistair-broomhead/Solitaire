@@ -12,6 +12,8 @@ namespace Solitaire.Game
         protected static int numToDeal = 3;
 
         [SerializeField]
+        public GameObject hoverParent;
+        [SerializeField]
         private GameObject[] exposedPositions;
         [SerializeField]
         private GameObject[] stackPositions;
@@ -19,6 +21,8 @@ namespace Solitaire.Game
         private GameObject[] sortedPositions;
         [SerializeField]
         private GameObject shoeTop;
+
+        public static GameObject HoverParent;
 
         [SerializeField]
         private GameState state;
@@ -36,6 +40,8 @@ namespace Solitaire.Game
         // Use this for initialization
         void Start()
         {
+            HoverParent = hoverParent;
+
             GameRendering.SetPositions(
                 exposedPositions, 
                 stackPositions, 

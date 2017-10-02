@@ -1,5 +1,6 @@
-﻿using System;
-using System.Collections;
+﻿using Solitaire.Game.Objects.Card;
+using Solitaire.Game.Objects.Position;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -7,10 +8,10 @@ using UnityEngine.EventSystems;
 namespace Solitaire.Game.Objects
 {
     [System.Serializable]
-    public class MouseHandler<T> where T : IMouseHandled
+    public class MouseHandler
     {
-        private T behaviour;
-        public MouseHandler(T handled, Canvas canvas)
+        private CardBehaviour behaviour;
+        public MouseHandler(CardBehaviour handled, Canvas canvas)
         {
             behaviour = handled;
             canvasTransform = canvas.transform as RectTransform;
@@ -37,6 +38,9 @@ namespace Solitaire.Game.Objects
         // and the initial local card position?
         private List<Vector2> pointerOffsets;
 
+        // What position was this attached to?
+        private List<Transform> fromPositions;
+
         // We will need the canvas' transform in order to 
         // make consistent position calculations
         private RectTransform canvasTransform;
@@ -48,6 +52,7 @@ namespace Solitaire.Game.Objects
             wasDragged = false;
             eventCamera = eventData.pressEventCamera;
 
+            fromPositions = new List<Transform>();
             leftPoints = new List<Vector3>();
             pointerOffsets = new List<Vector2>();
 
@@ -58,6 +63,10 @@ namespace Solitaire.Game.Objects
 
                 HandleDown(transform as RectTransform, eventData, out leftPoint, out pointerOffset);
 
+                fromPositions.Add(transform.parent);
+
+                transform.SetParent(Game.HoverParent.transform, true);
+
                 leftPoints.Add(leftPoint);
                 pointerOffsets.Add(pointerOffset);
             }
@@ -65,7 +74,7 @@ namespace Solitaire.Game.Objects
         private void HandleDown(RectTransform transform, PointerEventData eventData, out Vector3 leftPoint, out Vector2 pointerOffset)
         {
 
-            leftPoint = transform.localPosition;
+            leftPoint = transform.position;
             
             transform.SetAsLastSibling();
 
@@ -104,7 +113,7 @@ namespace Solitaire.Game.Objects
             // position - it should always be within the 
             // canvas' plane so we'd best warn if it's not
             if (inPlane)
-                transform.localPosition = canvasPosition - pointerOffset;
+                transform.position = canvasPosition - pointerOffset;
             else
                 Debug.LogWarningFormat("Out of canvas plane: {0}", eventData);
 
@@ -117,6 +126,11 @@ namespace Solitaire.Game.Objects
                 HandleDragEnd(eventData);
                 return;
             }
+
+            var transforms = behaviour.Transforms;
+
+            for (int i = 0; i < transforms.Count; i++)
+                transforms[i].parent = fromPositions[i];
 
             DateTime currentClickEnd = DateTime.Now;
             TimeSpan sinceLastClick = currentClickEnd - lastClicked;
@@ -135,12 +149,15 @@ namespace Solitaire.Game.Objects
             {
                 int i = 0;
                 foreach (Transform transform in behaviour.Transforms)
+                {
+                    transform.parent = fromPositions[i];
                     UndoDrag(transform, leftPoints[i++], eventData);
+                }   
             }
         }
         private void UndoDrag(Transform transform, Vector3 leftPoint, PointerEventData eventData)
         {
-            transform.localPosition = leftPoint;
+            transform.position = leftPoint;
         }
 
         private void HandleClick(PointerEventData eventData)
@@ -181,11 +198,11 @@ namespace Solitaire.Game.Objects
         ///     A Vector2 of the canvas-local position the corresponds to
         ///     screenPosition.
         /// </returns>
-        Vector2 CanvasPosition(Vector2 screenPosition, out bool inPlane)
+        Vector3 CanvasPosition(Vector2 screenPosition, out bool inPlane)
         {
-            Vector2 output;
+            Vector3 output;
 
-            inPlane = RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            inPlane = RectTransformUtility.ScreenPointToWorldPointInRectangle(
                 canvasTransform,
                 screenPosition,
                 eventCamera,
