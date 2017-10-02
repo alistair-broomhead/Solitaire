@@ -145,12 +145,14 @@ namespace Solitaire.Game.Objects
 
         public void HandleDragEnd(PointerEventData eventData)
         {
-            if (!behaviour.OnMove(eventData))
+            var worldPosition = CanvasPosition(eventData.position);
+
+            if (!behaviour.OnMove(worldPosition))
             {
                 int i = 0;
                 foreach (Transform transform in behaviour.Transforms)
                 {
-                    transform.parent = fromPositions[i];
+                    transform.SetParent(fromPositions[i]);
                     UndoDrag(transform, leftPoints[i++], eventData);
                 }   
             }

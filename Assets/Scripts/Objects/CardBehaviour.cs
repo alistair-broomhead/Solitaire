@@ -7,7 +7,7 @@ using UnityEngine.UI;
 namespace Solitaire.Game.Objects.Card {
 
     [System.Serializable]
-    public class CardBehaviour : MonoBehaviour, IMouseHandled
+    public class CardBehaviour : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IDragHandler
     {
         public List<Transform> Transforms { get { return transforms; } }
         [SerializeField]
@@ -42,19 +42,16 @@ namespace Solitaire.Game.Objects.Card {
 
         public void OnPointerDown(PointerEventData eventData)
         {
-            Debug.Log("OnPointerDown", this);
             if (handler != null) handler.OnDown(eventData);
         }
         
         public void OnDrag(PointerEventData eventData)
         {
-            Debug.Log("OnDrag", this);
             if (handler != null) handler.OnDrag(eventData);
         }
 
         public void OnPointerUp(PointerEventData eventData)
         {
-            Debug.Log("OnPointerUp", this);
             if (handler != null) handler.OnPointerUp(eventData);
         }
 
@@ -88,6 +85,13 @@ namespace Solitaire.Game.Objects.Card {
         public bool OnMove(PointerEventData eventData)
         {
             Debug.LogFormat("Move @ {0}", eventData);
+
+            return false;
+        }
+
+        public bool OnMove(Vector2 point)
+        {
+            Debug.LogFormat("Move @ {0}", point);
 
             return false;
         }
