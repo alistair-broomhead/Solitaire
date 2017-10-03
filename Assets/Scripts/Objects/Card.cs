@@ -66,6 +66,12 @@ namespace Solitaire.Game.Objects.Card
             SetTexture();
         }
 
+        public Card Flipped()
+        {
+            Flip();
+            return this;
+        }
+
         private void SetTexture()
         {
             if (behaviour == null) return;

@@ -1,15 +1,18 @@
 ﻿using Solitaire.Game.IListExtensions;
 using Solitaire.Game.Objects.Card;
 using UnityEngine;
-using System.Collections.Generic;
 using System;
 using Solitaire.Game.Objects.Position;
 
 namespace Solitaire.Game
 {
+
     [Serializable]
     public class Game : MonoBehaviour
     {
+        // Control how the deck is dealt
+        private static bool random = false;
+
         protected static int numToDeal = 3;
 
         [SerializeField]
@@ -51,20 +54,45 @@ namespace Solitaire.Game
             );
 
             Reset();
-            state.shoe.Shuffle();
 
-            for (int i = 0; i < state.stacks.Length; i++)
-                for (int j = i; j < state.stacks.Length; j++)
-                {
-                    Card card = state.shoe.Pop();
-
-                    if (i < j)
-                        card.Flip();
-
-                    state.stacks[j].Add(card);
-                }
+            if (random)
+                DealCardsRandom();
+            else
+                DealCardsSolvable();
 
             RedrawAll();
+        }
+
+        private void DealCardsSolvable()
+        {
+            // Eventually I plan to construct a solvable 
+            // deck from reversed valid moves from the
+            // solution, for now just give all the cards 
+            // in order
+            state.shoe.Reverse();
+            DealCards();
+
+            foreach (var stack in state.stacks)
+            {
+                stack.Reverse();
+                stack.Last().Flip();
+            }
+        }
+
+        private void DealCardsRandom()
+        {
+            state.shoe.Shuffle();
+            DealCards();
+
+            foreach (var stack in state.stacks)
+                stack.Last().Flip();
+        }
+
+        private void DealCards()
+        {
+            for (int i = 0; i < state.stacks.Length; i++)
+                for (int j = i; j >= 0; j--)
+                    state.stacks[i].Add(state.shoe.Pop().Flipped());
         }
 
         public void OnShoeClick()
