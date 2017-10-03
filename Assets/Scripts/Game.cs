@@ -109,6 +109,58 @@ namespace Solitaire.Game
         public void MoveCard(Card card)
         {
             Debug.LogFormat(this, "Attempting to move {0}", card.ToString());
+
+            bool moved = false;
+            
+            // Find where the card is
+            int fromStack;
+            int fromSorted;
+            bool fromExposed;
+
+            FindCurrentCardPosition(card, out fromExposed, out fromStack, out fromSorted);
+
+            Debug.LogFormat(this, "Card position: fromExposed={0}, fromStack={1}, fromSorted={2}", fromExposed, fromStack, fromSorted);
+
+            for (int toSorted = 0; toSorted < state.sorted.Length; toSorted++)
+                if (moved)
+                    break;
+                else if (fromExposed)
+                    // TODO - try moving from exposed deck card once move type implemented
+                    continue;
+                else if (fromStack >= 0)
+                    state = (new Move.SortCardFromStack(fromStack, toSorted)).Apply(state, out moved);
+
+            if (moved)
+            {
+                RedrawAll();
+                return;
+            }
+
+            // TODO - to stack
+        }
+
+        private void FindCurrentCardPosition(Card card, out bool fromExposed, out int fromStack, out int fromSorted)
+        {
+            fromStack = -1;
+            fromSorted = -1;
+
+            var firstExposed = exposedPositions[2].GetComponentInChildren<CardBehaviour>();
+
+            fromExposed = firstExposed == card.Behaviour;
+            if (fromExposed)
+                return;
+
+            for (fromStack = 0; fromStack < state.stacks.Length; fromStack++)
+                if (state.stacks[fromStack].Last() == card)
+                    return;
+
+            fromStack = -1;
+
+            for (fromSorted = 0; fromSorted < state.sorted.Length; fromSorted++)
+                if (state.sorted[fromSorted].Last() == card)
+                    return;
+
+            fromSorted = -1;
         }
 
         public bool MoveCardToPosition(Card card, Position position)
