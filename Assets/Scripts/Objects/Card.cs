@@ -88,7 +88,7 @@ namespace Solitaire.Game.Objects.Card
             val = cardValue;
         }
 
-        public string ToString()
+        new public string ToString()
         {
             string upOrDown;
             if (faceUp)
