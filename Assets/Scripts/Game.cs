@@ -47,9 +47,9 @@ namespace Solitaire.Game
             HoverParent = hoverParent;
 
             GameRendering.SetPositions(
-                exposedPositions, 
-                stackPositions, 
-                sortedPositions, 
+                exposedPositions,
+                stackPositions,
+                sortedPositions,
                 shoeTop
             );
 
@@ -108,35 +108,85 @@ namespace Solitaire.Game
 
         public void MoveCard(Card card)
         {
-            Debug.LogFormat(this, "Attempting to move {0}", card.ToString());
-
-            bool moved = false;
-            
             // Find where the card is
             int fromStack;
             int fromSorted;
             bool fromExposed;
+            FindCurrentCardPosition(card, out fromExposed, out fromStack, out fromSorted);
+            
+            for (int toSorted = 0; toSorted < state.sorted.Length; toSorted++)
+                if (MoveCardToSorted(toSorted, fromExposed, fromStack))
+                    return;
 
+            for (int toStack = 0; toStack < state.stacks.Length; toStack++)
+                if (MoveCardToStack(toStack, fromExposed, fromStack, fromSorted))
+                    return;
+        }
+
+        public bool MoveCardToPosition(Card card, Position position)
+        {
+            if (position == null) return false;
+            
+            // Find out where it's going
+            int toStack;
+            int toSorted;
+            FindPosition(position, out toStack, out toSorted);
+
+            if (toStack >= 0)
+                return MoveCardToStack(card, toStack);
+
+            if (toSorted >= 0)
+                return MoveCardToSorted(card, toSorted);
+
+            return false;
+        }
+
+        private bool MoveCardToStack(Card card, int toStack)
+        {
+            //Find where the card is
+            int fromStack;
+            int fromSorted;
+            bool fromExposed;
             FindCurrentCardPosition(card, out fromExposed, out fromStack, out fromSorted);
 
-            Debug.LogFormat(this, "Card position: fromExposed={0}, fromStack={1}, fromSorted={2}", fromExposed, fromStack, fromSorted);
+            return MoveCardToStack(toStack, fromExposed, fromStack, fromSorted);
+        }
 
-            for (int toSorted = 0; toSorted < state.sorted.Length; toSorted++)
-                if (moved)
-                    break;
-                else if (fromExposed)
-                    // TODO - try moving from exposed deck card once move type implemented
-                    continue;
-                else if (fromStack >= 0)
-                    state = (new Move.SortCardFromStack(fromStack, toSorted)).Apply(state, out moved);
+        private bool MoveCardToStack(int toStack, bool fromExposed, int fromStack, int fromSorted)
+        {
+            if (fromExposed)
+                // TODO
+                return false;
+            else if (fromStack >= 0)
+                // TODO
+                return false;
+            else if (fromSorted >= 0)
+                // TODO
+                return false;
 
-            if (moved)
-            {
-                RedrawAll();
-                return;
-            }
+            return false;
+        }
 
-            // TODO - to stack
+        private bool MoveCardToSorted(Card card, int toSorted)
+        {
+            // Find where the card is
+            int fromStack;
+            int fromSorted;
+            bool fromExposed;
+            FindCurrentCardPosition(card, out fromExposed, out fromStack, out fromSorted);
+
+            return MoveCardToSorted(toSorted, fromExposed, fromStack);
+        }
+
+        private bool MoveCardToSorted(int toSorted, bool fromExposed, int fromStack)
+        {
+            if (fromExposed)
+                // TODO
+                return false;
+            else if (fromStack >= 0)
+                return ApplyMove(new Move.SortCardFromStack(fromStack, toSorted));
+
+            return false;
         }
 
         private void FindCurrentCardPosition(Card card, out bool fromExposed, out int fromStack, out int fromSorted)
@@ -163,28 +213,21 @@ namespace Solitaire.Game
             fromSorted = -1;
         }
 
-        public bool MoveCardToPosition(Card card, Position position)
+        private void FindPosition(Position position, out int stack, out int sorted)
         {
-            if (position == null) return false;
+            stack = -1;
 
-            Debug.LogFormat(this, "Attempting to move {0} to {1}", card.ToString(), position);
+            for (sorted = 0; sorted < sortedPositions.Length; sorted++)
+                if (sortedPositions[sorted] == position.gameObject)
+                    return;
 
-            for (int i = 0; i < sortedPositions.Length; i++)
-                if (sortedPositions[i] == position.gameObject)
-                    for (int j = 0; j < state.stacks.Length; j++)
-                        if (state.stacks[j].Last() == card)
-                        {
-                            bool valid;
-                            var move = new Move.SortCardFromStack(j, i);
-                            state = move.Apply(state, out valid);
+            sorted = -1;
 
-                            if (valid)
-                                GameRendering.RedrawAll(state);
+            for (stack = 0; stack < stackPositions.Length; stack++)
+                if (stackPositions[stack] == position.gameObject)
+                    return;
 
-                            return valid;
-                        }
-
-            return false;
+            stack = -1;
         }
 
         private void ResetShoe()
@@ -198,19 +241,16 @@ namespace Solitaire.Game
             ApplyMove(new Move.TakeFromShoe(numCards));
         }
 
-        private void ApplyMove(Move.MoveType move)
+        private bool ApplyMove(Move.MoveType move)
         {
             bool valid;
 
             state = move.Apply(state, out valid);
 
             if (valid)
-            {
-                Debug.LogFormat(this, "{0} was valid", move);
                 RedrawAll();
-            }
-            else
-                Debug.LogErrorFormat(this, "{0} was invalid!", move);
+
+            return valid;
         }
 
         public void Undo()
