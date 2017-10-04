@@ -9,9 +9,35 @@ namespace Solitaire.Game.Objects.Card {
     [System.Serializable]
     public class CardBehaviour : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IDragHandler
     {
+        FixedPosition fixedPosition;
+        
+        List<Transform> transforms;
+
         public List<Transform> Transforms { get { return transforms; } }
-        [SerializeField]
-        private List<Transform> transforms;
+
+        private void RefreshTransforms()
+        {
+            fixedPosition = GetComponentInParent<FixedPosition>();
+            transforms.Clear();
+
+            if (!acceptMouseEvents)
+                return;
+
+            if (fixedPosition == null)
+            {   // This happens when taking the top exposed 
+                // card from the deck, there can be no 
+                // stacked cards in this case.
+                transforms.Add(transform);
+                return;
+            }
+
+            foreach (var card in fixedPosition.GetComponentsInChildren<CardBehaviour>())
+                if (card == this)
+                    transforms.Add(card.transform);
+                else if (transforms.Count > 0)
+                    transforms.Add(card.transform);
+        }
+
         [SerializeField]
         private MouseHandler handler;
         [SerializeField]
@@ -24,27 +50,22 @@ namespace Solitaire.Game.Objects.Card {
 
         public void Awake()
         {
+            if (transforms == null)
+                transforms = new List<Transform>();
+            
             game = GetComponentInParent<Game>();
+            fixedPosition = GetComponentInParent<FixedPosition>();
             Canvas canvas = GetComponentInParent<Canvas>();
+            
 
             if (canvas != null)
                 handler = new MouseHandler(this, canvas);
-
-            transforms = new List<Transform>();
-            if (acceptMouseEvents) transforms.Add(transform);
-        }
-
-        void Update()
-        {
-            if (acceptMouseEvents && Transforms.Count == 0)
-                transforms.Add(transform as RectTransform);
-
-            else if (!acceptMouseEvents && Transforms.Count > 0)
-                transforms.Clear();
         }
 
         public void OnPointerDown(PointerEventData eventData)
         {
+            RefreshTransforms();
+
             if (handler != null) handler.OnDown(eventData);
         }
         

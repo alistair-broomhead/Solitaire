@@ -278,6 +278,9 @@ namespace Solitaire.Game
 
         private void RedrawAll()
         {
+            foreach (var card in hoverParent.GetComponentsInChildren<CardBehaviour>())
+                GameObject.Destroy(card.gameObject);
+
             GameRendering.RedrawAll(state);
         }
     }
