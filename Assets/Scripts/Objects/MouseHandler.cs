@@ -17,12 +17,6 @@ namespace Solitaire.Game.Objects
             canvasTransform = canvas.transform as RectTransform;
         }
 
-        // How long is a double click? See here!
-        public static int doubleClickIntervalMs = 500;
-
-        // When was this card last clicked?
-        private DateTime lastClicked;
-
         // Has there been a Drag since the las PointerDown 
         // event?
         private bool wasDragged;
@@ -73,7 +67,6 @@ namespace Solitaire.Game.Objects
         }
         private void HandleDown(RectTransform transform, PointerEventData eventData, out Vector3 leftPoint, out Vector2 pointerOffset)
         {
-
             leftPoint = transform.position;
             
             transform.SetAsLastSibling();
@@ -95,10 +88,8 @@ namespace Solitaire.Game.Objects
         {
             if (canvasTransform == null) return;
 
-            // Make sure we don't treat this as a click, or
-            // part of a double-click
+            // Make sure we don't treat this as a click
             wasDragged = true;
-            lastClicked = DateTime.MinValue;
 
             // Don't allow the player to drag the card out
             // of the window entirely
@@ -122,25 +113,9 @@ namespace Solitaire.Game.Objects
         public void OnPointerUp(PointerEventData eventData)
         {
             if (wasDragged)
-            {
                 HandleDragEnd(eventData);
-                return;
-            }
-
-            var transforms = behaviour.Transforms;
-
-            for (int i = 0; i < transforms.Count; i++)
-                transforms[i].SetParent(fromPositions[i]);
-
-            DateTime currentClickEnd = DateTime.Now;
-            TimeSpan sinceLastClick = currentClickEnd - lastClicked;
-            lastClicked = currentClickEnd;
-
-            if (sinceLastClick.TotalMilliseconds < doubleClickIntervalMs)
-                HandleDoubleClick(eventData);
             else
                 HandleClick(eventData);
-
         }
 
         public void HandleDragEnd(PointerEventData eventData)
@@ -149,25 +124,28 @@ namespace Solitaire.Game.Objects
 
             if (!behaviour.OnMove(worldPosition))
             {
-                int i = 0;
-                foreach (Transform transform in behaviour.Transforms)
-                {
-                    transform.SetParent(fromPositions[i]);
-                    UndoDrag(transform, leftPoints[i++], eventData);
-                }   
+                var transforms = behaviour.Transforms;
+
+                for (int i = 0; i < transforms.Count; i++)
+                    ResetClick(i, transforms);
             }
         }
-        private void UndoDrag(Transform transform, Vector3 leftPoint, PointerEventData eventData)
+
+        private void HandleClick(PointerEventData eventData)
         {
-            transform.position = leftPoint;
+            var transforms = behaviour.Transforms;
+
+            for (int i = 0; i < transforms.Count; i++)
+                ResetClick(i, transforms);
+
+            behaviour.OnTap(eventData);
         }
-
-        private void HandleClick(PointerEventData eventData) {}
-
-        private void HandleDoubleClick(PointerEventData eventData)
+        private void ResetClick(int index, List<Transform> transforms)
         {
-            behaviour.OnDoubleClick(eventData);
-            lastClicked = DateTime.MinValue;
+            var transform = transforms[index];
+
+            transform.SetParent(fromPositions[index]);
+            transform.position = leftPoints[index];
         }
 
         Vector2 ClampToWindow(PointerEventData data)

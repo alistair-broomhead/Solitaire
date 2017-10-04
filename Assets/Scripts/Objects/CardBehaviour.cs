@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.EventSystems;
 using System.Collections.Generic;
-using System;
 using UnityEngine.UI;
 using Solitaire.Game.Objects.Position;
 
@@ -74,14 +73,7 @@ namespace Solitaire.Game.Objects.Card {
             image.preserveAspect = true;
         }
 
-        internal void SetImage(string imageName)
-        {
-            Texture2D texture = Resources.Load<Texture2D>(imageName);
-
-            SetTexture(texture);
-        }
-
-        public void OnDoubleClick(PointerEventData eventData)
+        public void OnTap(PointerEventData eventData)
         {
             game.MoveCard(gameCard);
         }
