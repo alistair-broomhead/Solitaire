@@ -155,14 +155,11 @@ namespace Solitaire.Game
         private bool MoveCardToStack(int toStack, bool fromExposed, int fromStack, int fromSorted)
         {
             if (fromExposed)
-                // TODO
-                return false;
+                return ApplyMove(new Move.StackCardFromExposed(toStack));
             else if (fromStack >= 0)
-                // TODO
-                return false;
+                return ApplyMove(new Move.StackCardFromStack(fromStack, toStack));
             else if (fromSorted >= 0)
-                // TODO
-                return false;
+                return ApplyMove(new Move.StackCardFromSorted(fromSorted, toStack));
 
             return false;
         }

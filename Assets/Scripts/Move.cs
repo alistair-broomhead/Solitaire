@@ -9,6 +9,12 @@ namespace Solitaire.Game.Move
     [Serializable]
     public abstract class MoveType
     {
+        protected abstract List<Card> FromCards(GameState state);
+        protected abstract List<Card> ToCards(GameState state);
+
+        protected virtual void OnApplyUncover(Card uncovered) { }
+        protected virtual void OnReverseUncover(Card uncovered) { }
+
         public abstract bool Valid(GameState initial);
 
         public GameState Apply(GameState initial, out bool valid)
@@ -20,8 +26,6 @@ namespace Solitaire.Game.Move
             else
                 return initial;
         }
-        public abstract GameState Apply(GameState initial);
-        public abstract GameState Reverse(GameState initial);
 
         protected void RemoveFromHistory(GameState state)
         {
@@ -32,6 +36,43 @@ namespace Solitaire.Game.Move
                 Debug.LogWarning("Move being reversed is not the last move!");
                 state.history.Add(move);
             }
+        }
+
+        protected virtual GameState Apply(GameState initial)
+        {
+            var newState = new GameState(initial);
+            var to = ToCards(newState);
+            var from = FromCards(newState);
+
+            to.Add(from.Pop());
+
+            var uncovered = from.Last();
+
+            if (uncovered != null)
+                OnApplyUncover(uncovered);
+
+            newState.history.Add(this);
+
+            return newState;
+        }
+
+        public virtual GameState Reverse(GameState initial)
+        {
+            var newState = new GameState(initial);
+            var to = ToCards(newState);
+            var from = FromCards(newState);
+
+            var uncovered = from.Last();
+
+            from.Add(to.Pop());
+            
+            if (uncovered != null)
+                OnReverseUncover(uncovered);
+
+            if (newState.history.Pop() != this)
+                Debug.LogWarning("Reversing wrong move");
+
+            return newState;
         }
     }
     
@@ -45,28 +86,39 @@ namespace Solitaire.Game.Move
         {
             return numCards <= initial.shoe.Count;
         }
+        
+        protected override List<Card> FromCards(GameState state)
+        {
+            return state.shoe;
+        }
 
-        public override GameState Apply(GameState initial)
+        protected override List<Card> ToCards(GameState state)
+        {
+            return state.exposed;
+        }
+        protected override GameState Apply(GameState initial)
         {
             var newState = new GameState(initial);
+            var from = FromCards(newState);
+            var to = ToCards(newState);
 
             for (int i = 0; i < numCards; i++)
-                newState.exposed.Add(newState.shoe.Pop());
+                to.Add(from.Pop());
 
             newState.history.Add(this);
 
             return newState;
-
         }
-
         public override GameState Reverse(GameState initial)
         {
             var newState = new GameState(initial);
+            var from = FromCards(newState);
+            var to = ToCards(newState);
 
             RemoveFromHistory(newState);
 
             for (int i = 0; i < numCards; i++)
-                newState.shoe.Add(newState.exposed.Pop());
+                from.Add(to.Pop());
 
             return newState;
         }
@@ -87,7 +139,7 @@ namespace Solitaire.Game.Move
                 initial.exposed.Count > 0
             );
         }
-        public override GameState Apply(GameState initial)
+        protected override GameState Apply(GameState initial)
         {
             var newState = new GameState(initial);
 
@@ -109,15 +161,30 @@ namespace Solitaire.Game.Move
 
             return newState;
         }
+
+        protected override List<Card> FromCards(GameState state)
+        {
+            return state.exposed;
+        }
+
+        protected override List<Card> ToCards(GameState state)
+        {
+            return state.shoe;
+        }
     }
 
     public abstract class SortCard : MoveType
     {
         protected int sorted;
 
-        protected bool Valid(GameState initial, Card card)
+        public override bool Valid(GameState initial)
         {
-            var toSorted = initial.sorted[sorted];
+            var card = FromCards(initial).Last();
+
+            if (card == null)
+                return false;
+
+            var toSorted = ToCards(initial);
             int numSorted = toSorted.Count;
 
             if (card.Value == CardValue.Ace)
@@ -135,6 +202,11 @@ namespace Solitaire.Game.Move
 
             return valueDiff == 1;
         }
+
+        protected override List<Card> ToCards(GameState state)
+        {
+            return state.sorted[sorted];
+        }
     }
 
     [Serializable]
@@ -143,55 +215,25 @@ namespace Solitaire.Game.Move
         private int stack;
         private bool fromFaceDown = false;
 
-        public override GameState Apply(GameState initial)
+        protected override List<Card> FromCards(GameState state)
         {
-            var newState = new GameState(initial);
+            return state.stacks[stack];
+        }
 
-            List<Card> fromStack = newState.stacks[stack];
-            List<Card> toSorted = newState.sorted[sorted];
-
-            toSorted.Add(fromStack.Pop());
-
-            var uncovered = fromStack.Last();
-
-            if (uncovered != null && !uncovered.FaceUp)
+        protected override void OnApplyUncover(Card uncovered)
+        {
+            if (!uncovered.FaceUp)
             {
-                fromFaceDown = true;
                 uncovered.Flip();
+                fromFaceDown = true;
             }
-
-            newState.history.Add(this);
-
-            return newState;
         }
-
-        public override GameState Reverse(GameState initial)
+        protected override void OnReverseUncover(Card uncovered)
         {
-            var newState = new GameState(initial);
-
-            List<Card> fromStack = newState.stacks[stack];
-            List<Card> toSorted = newState.sorted[sorted];
-
             if (fromFaceDown)
-                fromStack.Last().Flip();
-
-            fromStack.Add(toSorted.Pop());
-
-            RemoveFromHistory(newState);
-
-            return newState;
+                uncovered.Flip();
         }
-
-        public override bool Valid(GameState initial)
-        {
-            var card = initial.stacks[stack].Last();
-
-            if (card == null)
-                return false;
-
-            return Valid(initial, card);
-        }
-
+        
         public SortCardFromStack(int fromStackIndex, int toSortedIndex)
         {
             stack = fromStackIndex;
@@ -202,41 +244,126 @@ namespace Solitaire.Game.Move
     [Serializable]
     public class SortCardFromExposed : SortCard
     {
-        public override GameState Apply(GameState initial)
+
+        protected override List<Card> FromCards(GameState state)
         {
-            var newState = new GameState(initial);
-            
-            newState.sorted[sorted].Add(newState.exposed.Pop());
-
-            newState.history.Add(this);
-
-            return newState;
+            return state.exposed;
         }
-
-        public override GameState Reverse(GameState initial)
+        
+        public SortCardFromExposed(int toSortedIndex)
         {
-            var newState = new GameState(initial);
+            sorted = toSortedIndex;
+        }
+    }
 
-            newState.exposed.Add(newState.sorted[sorted].Pop());
+    public abstract class StackCard : MoveType
+    {
+        private enum Colour: sbyte
+        {
+            Red,
+            Black
+        }
+        private Dictionary<Suit, Colour> suitColour = new Dictionary<Suit, Colour> {
+            { Suit.Clubs, Colour.Black },
+            { Suit.Hearts, Colour.Red },
+            { Suit.Diamonds, Colour.Red },
+            { Suit.Spades, Colour.Black }
+        };
 
-            RemoveFromHistory(newState);
+        protected int toStack;
 
-            return newState;
+        protected override List<Card> ToCards(GameState state)
+        {
+            return state.stacks[toStack];
         }
 
         public override bool Valid(GameState initial)
         {
-            var card = initial.exposed.Last();
+            var card = FromCards(initial).Last();
 
             if (card == null)
                 return false;
 
-            return Valid(initial, card);
+            var topCard = initial.stacks[toStack].Last();
+
+            if (card.Value == CardValue.King)
+                return topCard == null;
+
+            if (topCard == null)
+                return false;
+
+            if (suitColour[card.Suit] == suitColour[topCard.Suit])
+                return false;
+
+            int valueDiff = (int)topCard.Value - (int)card.Value;
+
+            return valueDiff == 1;
+        }
+    }
+
+    [Serializable]
+    public class StackCardFromExposed : StackCard
+    {
+        private bool fromFaceDown;
+
+        public StackCardFromExposed(int toStackIndex)
+        {
+            toStack = toStackIndex;
         }
 
-        public SortCardFromExposed(int toSortedIndex)
+        protected override List<Card> FromCards(GameState state)
         {
-            sorted = toSortedIndex;
+            return state.exposed;
+        }
+    }
+
+    [Serializable]
+    public class StackCardFromSorted : StackCard
+    {
+        private int fromSorted;
+        private bool fromFaceDown;
+
+        public StackCardFromSorted(int fromSortedIndex, int toStackIndex)
+        {
+            fromSorted = fromSortedIndex;
+            toStack = toStackIndex;
+        }
+
+        protected override List<Card> FromCards(GameState state)
+        {
+            return state.sorted[fromSorted];
+        }
+    }
+
+    [Serializable]
+    public class StackCardFromStack : StackCard
+    {
+        private int fromStack;
+        private bool fromFaceDown;
+
+        public StackCardFromStack(int fromStackIndex, int toStackIndex)
+        {
+            fromStack = fromStackIndex;
+            toStack = toStackIndex;
+        }
+
+        protected override void OnApplyUncover(Card uncovered)
+        {
+            if (!uncovered.FaceUp)
+            {
+                uncovered.Flip();
+                fromFaceDown = true;
+            }
+        }
+        protected override void OnReverseUncover(Card uncovered)
+        {
+            if (fromFaceDown)
+                uncovered.Flip();
+        }
+
+        protected override List<Card> FromCards(GameState state)
+        {
+            return state.stacks[fromStack];
         }
     }
 }
