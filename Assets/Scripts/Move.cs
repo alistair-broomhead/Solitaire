@@ -370,12 +370,13 @@ namespace Solitaire.Game.Move
     [Serializable]
     public class MoveStack : MoveType
     {
+        bool fromFaceDown = false;
         int fromStack;
         int fromIndex;
         int toStack;
         int toIndex;
 
-        protected MoveStack(int fromStackIndex, int fromStackContentIndex, int toStackIndex)
+        public MoveStack(int fromStackIndex, int fromStackContentIndex, int toStackIndex)
         {
             fromStack = fromStackIndex;
             fromIndex = fromStackContentIndex;
@@ -456,6 +457,20 @@ namespace Solitaire.Game.Move
                 Debug.LogWarning("Reversing wrong move");
 
             return newState;
+        }
+
+        protected override void OnApplyUncover(Card uncovered)
+        {
+            if (!uncovered.FaceUp)
+            {
+                uncovered.Flip();
+                fromFaceDown = true;
+            }
+        }
+        protected override void OnReverseUncover(Card uncovered)
+        {
+            if (fromFaceDown)
+                uncovered.Flip();
         }
     }
 }

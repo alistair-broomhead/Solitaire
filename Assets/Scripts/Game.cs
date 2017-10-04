@@ -110,16 +110,17 @@ namespace Solitaire.Game
         {
             // Find where the card is
             int fromStack;
+            int fromStackIndex;
             int fromSorted;
             bool fromExposed;
-            FindCurrentCardPosition(card, out fromExposed, out fromStack, out fromSorted);
+            FindCurrentCardPosition(card, out fromExposed, out fromStack, out fromStackIndex, out fromSorted);
             
             for (int toSorted = 0; toSorted < state.sorted.Length; toSorted++)
-                if (MoveCardToSorted(toSorted, fromExposed, fromStack))
+                if (MoveCardToSorted(toSorted, fromExposed, fromStack, fromStackIndex))
                     return;
 
             for (int toStack = 0; toStack < state.stacks.Length; toStack++)
-                if (MoveCardToStack(toStack, fromExposed, fromStack, fromSorted))
+                if (MoveCardToStack(toStack, fromExposed, fromStack, fromStackIndex, fromSorted))
                     return;
         }
 
@@ -145,19 +146,20 @@ namespace Solitaire.Game
         {
             //Find where the card is
             int fromStack;
+            int fromStackIndex;
             int fromSorted;
             bool fromExposed;
-            FindCurrentCardPosition(card, out fromExposed, out fromStack, out fromSorted);
+            FindCurrentCardPosition(card, out fromExposed, out fromStack, out fromStackIndex, out fromSorted);
 
-            return MoveCardToStack(toStack, fromExposed, fromStack, fromSorted);
+            return MoveCardToStack(toStack, fromExposed, fromStack, fromStackIndex, fromSorted);
         }
 
-        private bool MoveCardToStack(int toStack, bool fromExposed, int fromStack, int fromSorted)
+        private bool MoveCardToStack(int toStack, bool fromExposed, int fromStack, int fromStackIndex, int fromSorted)
         {
             if (fromExposed)
                 return ApplyMove(new Move.StackCardFromExposed(toStack));
             else if (fromStack >= 0)
-                return ApplyMove(new Move.StackCardFromStack(fromStack, toStack));
+                return ApplyMove(new Move.MoveStack(fromStack, fromStackIndex, toStack));
             else if (fromSorted >= 0)
                 return ApplyMove(new Move.StackCardFromSorted(fromSorted, toStack));
 
@@ -168,25 +170,33 @@ namespace Solitaire.Game
         {
             // Find where the card is
             int fromStack;
+            int fromStackIndex;
             int fromSorted;
             bool fromExposed;
-            FindCurrentCardPosition(card, out fromExposed, out fromStack, out fromSorted);
+            FindCurrentCardPosition(card, out fromExposed, out fromStack, out fromStackIndex, out fromSorted);
 
-            return MoveCardToSorted(toSorted, fromExposed, fromStack);
+            return MoveCardToSorted(toSorted, fromExposed, fromStack, fromStackIndex);
         }
 
-        private bool MoveCardToSorted(int toSorted, bool fromExposed, int fromStack)
+        private bool MoveCardToSorted(int toSorted, bool fromExposed, int fromStack, int fromStackIndex)
         {
+            if (fromStack >= 0)
+                if (fromStackIndex != state.stacks[fromStack].Count - 1)
+                    return false;
             if (fromExposed)
                 return ApplyMove(new Move.SortCardFromExposed(toSorted));
             else if (fromStack >= 0)
-                return ApplyMove(new Move.SortCardFromStack(fromStack, toSorted));
+                return (
+                    (fromStackIndex + 1 == state.stacks[fromStack].Count) &&
+                    ApplyMove(new Move.SortCardFromStack(fromStack, toSorted))
+                );
 
             return false;
         }
 
-        private void FindCurrentCardPosition(Card card, out bool fromExposed, out int fromStack, out int fromSorted)
+        private void FindCurrentCardPosition(Card card, out bool fromExposed, out int fromStack, out int fromStackIndex, out int fromSorted)
         {
+            fromStackIndex = -1;
             fromStack = -1;
             fromSorted = -1;
 
@@ -196,10 +206,12 @@ namespace Solitaire.Game
                 return;
 
             for (fromStack = 0; fromStack < state.stacks.Length; fromStack++)
-                if (state.stacks[fromStack].Last() == card)
-                    return;
+                for (fromStackIndex = 0; fromStackIndex < state.stacks[fromStack].Count; fromStackIndex++)
+                    if (state.stacks[fromStack][fromStackIndex] == card)
+                        return;
 
             fromStack = -1;
+            fromStackIndex = -1;
 
             for (fromSorted = 0; fromSorted < state.sorted.Length; fromSorted++)
                 if (state.sorted[fromSorted].Last() == card)
