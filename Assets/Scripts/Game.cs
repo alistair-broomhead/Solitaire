@@ -181,8 +181,7 @@ namespace Solitaire.Game
         private bool MoveCardToSorted(int toSorted, bool fromExposed, int fromStack)
         {
             if (fromExposed)
-                // TODO
-                return false;
+                return ApplyMove(new Move.SortCardFromExposed(toSorted));
             else if (fromStack >= 0)
                 return ApplyMove(new Move.SortCardFromStack(fromStack, toSorted));
 
@@ -194,9 +193,8 @@ namespace Solitaire.Game
             fromStack = -1;
             fromSorted = -1;
 
-            var firstExposed = exposedPositions[2].GetComponentInChildren<CardBehaviour>();
+            fromExposed = state.exposed.Last() == card;
 
-            fromExposed = firstExposed == card.Behaviour;
             if (fromExposed)
                 return;
 

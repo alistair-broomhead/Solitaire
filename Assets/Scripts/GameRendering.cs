@@ -85,7 +85,7 @@ namespace Solitaire.Game
 
                 ChangeCard(card, position, behaviour);
 
-                if (i == 2)
+                if (i == numCards - 1)
                     behaviour.acceptMouseEvents = true;
             }
         }

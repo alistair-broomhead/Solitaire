@@ -111,11 +111,36 @@ namespace Solitaire.Game.Move
         }
     }
 
+    public abstract class SortCard : MoveType
+    {
+        protected int sorted;
+
+        protected bool Valid(GameState initial, Card card)
+        {
+            var toSorted = initial.sorted[sorted];
+            int numSorted = toSorted.Count;
+
+            if (card.Value == CardValue.Ace)
+                return numSorted == 0;
+
+            if (numSorted == 0)
+                return false;
+
+            Card topCard = toSorted.Last();
+
+            if (topCard.Suit != card.Suit)
+                return false;
+
+            int valueDiff = (int)card.Value - (int)topCard.Value;
+
+            return valueDiff == 1;
+        }
+    }
+
     [Serializable]
-    public class SortCardFromStack : MoveType
+    public class SortCardFromStack : SortCard
     {
         private int stack;
-        private int sorted;
         private bool fromFaceDown = false;
 
         public override GameState Apply(GameState initial)
@@ -127,13 +152,12 @@ namespace Solitaire.Game.Move
 
             toSorted.Add(fromStack.Pop());
 
-            if (
-                (fromStack.Count > 0) &&
-                (!fromStack[fromStack.Count - 1].FaceUp)
-            )
+            var uncovered = fromStack.Last();
+
+            if (uncovered != null && !uncovered.FaceUp)
             {
                 fromFaceDown = true;
-                fromStack[fromStack.Count - 1].Flip();
+                uncovered.Flip();
             }
 
             newState.history.Add(this);
@@ -149,7 +173,7 @@ namespace Solitaire.Game.Move
             List<Card> toSorted = newState.sorted[sorted];
 
             if (fromFaceDown)
-                fromStack[fromStack.Count - 1].Flip();
+                fromStack.Last().Flip();
 
             fromStack.Add(toSorted.Pop());
 
@@ -160,35 +184,58 @@ namespace Solitaire.Game.Move
 
         public override bool Valid(GameState initial)
         {
-            var fromStack = initial.stacks[stack];
+            var card = initial.stacks[stack].Last();
 
-            if (fromStack.Count == 0)
+            if (card == null)
                 return false;
 
-            var card = fromStack[fromStack.Count - 1];
-
-            var toSorted = initial.sorted[sorted];
-            int numSorted = toSorted.Count;
-
-            if (card.Value == CardValue.Ace)
-                return numSorted == 0;
-            
-            if (numSorted == 0)
-                return false;
-
-            Card topCard = toSorted[numSorted - 1];
-
-            if (topCard.Suit != card.Suit)
-                return false;
-
-            int valueDiff = (int)card.Value - (int)topCard.Value;
-
-            return valueDiff == 1;
+            return Valid(initial, card);
         }
 
         public SortCardFromStack(int fromStackIndex, int toSortedIndex)
         {
             stack = fromStackIndex;
+            sorted = toSortedIndex;
+        }
+    }
+
+    [Serializable]
+    public class SortCardFromExposed : SortCard
+    {
+        public override GameState Apply(GameState initial)
+        {
+            var newState = new GameState(initial);
+            
+            newState.sorted[sorted].Add(newState.exposed.Pop());
+
+            newState.history.Add(this);
+
+            return newState;
+        }
+
+        public override GameState Reverse(GameState initial)
+        {
+            var newState = new GameState(initial);
+
+            newState.exposed.Add(newState.sorted[sorted].Pop());
+
+            RemoveFromHistory(newState);
+
+            return newState;
+        }
+
+        public override bool Valid(GameState initial)
+        {
+            var card = initial.exposed.Last();
+
+            if (card == null)
+                return false;
+
+            return Valid(initial, card);
+        }
+
+        public SortCardFromExposed(int toSortedIndex)
+        {
             sorted = toSortedIndex;
         }
     }
