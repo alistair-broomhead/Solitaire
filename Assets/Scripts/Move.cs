@@ -258,12 +258,12 @@ namespace Solitaire.Game.Move
 
     public abstract class StackCard : MoveType
     {
-        private enum Colour: sbyte
+        internal enum Colour: sbyte
         {
             Red,
             Black
         }
-        private Dictionary<Suit, Colour> suitColour = new Dictionary<Suit, Colour> {
+        internal static Dictionary<Suit, Colour> suitColour = new Dictionary<Suit, Colour> {
             { Suit.Clubs, Colour.Black },
             { Suit.Hearts, Colour.Red },
             { Suit.Diamonds, Colour.Red },
@@ -364,6 +364,98 @@ namespace Solitaire.Game.Move
         protected override List<Card> FromCards(GameState state)
         {
             return state.stacks[fromStack];
+        }
+    }
+
+    [Serializable]
+    public class MoveStack : MoveType
+    {
+        int fromStack;
+        int fromIndex;
+        int toStack;
+        int toIndex;
+
+        protected MoveStack(int fromStackIndex, int fromStackContentIndex, int toStackIndex)
+        {
+            fromStack = fromStackIndex;
+            fromIndex = fromStackContentIndex;
+            toStack = toStackIndex;
+        }
+
+        public override bool Valid(GameState initial)
+        {
+            var card = FromCards(initial)[fromIndex];
+
+            if (card == null)
+                return false;
+
+            var topCard = initial.stacks[toStack].Last();
+
+            if (card.Value == CardValue.King)
+                return topCard == null;
+
+            if (topCard == null)
+                return false;
+
+            if (StackCard.suitColour[card.Suit] == StackCard.suitColour[topCard.Suit])
+                return false;
+
+            int valueDiff = (int)topCard.Value - (int)card.Value;
+
+            return valueDiff == 1;
+        }
+
+        protected override List<Card> FromCards(GameState state)
+        {
+            return state.stacks[fromStack];
+        }
+
+        protected override List<Card> ToCards(GameState state)
+        {
+            return state.stacks[toStack];
+        }
+
+        protected override GameState Apply(GameState initial)
+        {
+            var newState = new GameState(initial);
+            var to = ToCards(newState);
+            var from = FromCards(newState);
+
+            toIndex = to.Count;
+            int numCards = from.Count - fromIndex;
+
+            for (int i = 0; i < numCards; i++)
+                to.Add(from.PopAt(fromIndex));
+
+            var uncovered = from.Last();
+
+            if (uncovered != null)
+                OnApplyUncover(uncovered);
+
+            newState.history.Add(this);
+
+            return newState;
+        }
+
+        public override GameState Reverse(GameState initial)
+        {
+            var newState = new GameState(initial);
+            var to = ToCards(newState);
+            var from = FromCards(newState);
+
+            var uncovered = from.Last();
+            int numCards = to.Count - toIndex;
+
+            for (int i = 0; i < numCards; i++)
+                from.Add(to.PopAt(toIndex));
+
+            if (uncovered != null)
+                OnReverseUncover(uncovered);
+
+            if (newState.history.Pop() != this)
+                Debug.LogWarning("Reversing wrong move");
+
+            return newState;
         }
     }
 }
