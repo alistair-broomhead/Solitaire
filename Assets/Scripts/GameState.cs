@@ -17,6 +17,33 @@ namespace Solitaire.Game
 
         public List<MoveType> history;
 
+        public int Score
+        {
+            get
+            {
+                int score = 0;
+
+                foreach (var move in history)
+                {
+                    if (
+                        (move is SortCardFromExposed) ||
+                        (move is SortCardFromStack)
+                    )
+                        score += 10;
+                    else if (move is StackCardFromExposed)
+                        score += 5;
+                    else if (move is StackCardFromSorted)
+                        score -= 15;
+                    if (
+                        (move is IFaceDownable) && move.FromFaceDown
+                    )
+                        score += 5;
+                }
+
+                return score;
+            }
+        }
+
         public GameState()
         {
             history = new List<MoveType>();

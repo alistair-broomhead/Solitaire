@@ -1,8 +1,10 @@
-﻿using Solitaire.Game.IListExtensions;
+﻿#pragma warning disable 0649
+using Solitaire.Game.IListExtensions;
 using Solitaire.Game.Objects.Card;
 using UnityEngine;
 using System;
 using Solitaire.Game.Objects.Position;
+using UnityEngine.UI;
 
 namespace Solitaire.Game
 {
@@ -13,6 +15,14 @@ namespace Solitaire.Game
         public static bool random = true;
 
         protected static int numToDeal = 3;
+
+        [SerializeField]
+        private Text scoreText;
+        [SerializeField]
+        private Text timeText;
+        private DateTime startTime;
+        private bool started = false;
+        private bool ended = false;
 
         [SerializeField]
         public GameObject hoverParent;
@@ -58,6 +68,35 @@ namespace Solitaire.Game
                 DealCardsSolvable();
 
             RedrawAll();
+
+            startTime = DateTime.Now;
+        }
+
+        private void Update()
+        {
+            if (!started)
+                startTime = DateTime.Now;
+            else if (!ended)
+            {
+                bool justEnded = (
+                    (state.shoe.Count == 0) &&
+                    (state.exposed.Count == 0)
+                );
+
+                foreach (var stack in state.stacks)
+                    justEnded &= (stack.Count == 0);
+
+                var gameTime = DateTime.Now - startTime;
+
+                timeText.text = string.Format(
+                    "{0:00}:{1:00}",
+                    gameTime.Minutes,
+                    gameTime.Seconds
+                );
+
+                ended = justEnded;
+            }
+
         }
 
         private void DealCardsSolvable()
@@ -111,7 +150,7 @@ namespace Solitaire.Game
             int fromSorted;
             bool fromExposed;
             FindCurrentCardPosition(card, out fromExposed, out fromStack, out fromStackIndex, out fromSorted);
-            
+
             for (int toSorted = 0; toSorted < state.sorted.Length; toSorted++)
                 if (MoveCardToSorted(toSorted, fromExposed, fromStack, fromStackIndex))
                     return;
@@ -124,7 +163,7 @@ namespace Solitaire.Game
         public bool MoveCardToPosition(Card card, Position position)
         {
             if (position == null) return false;
-            
+
             // Find out where it's going
             int toStack;
             int toSorted;
@@ -244,7 +283,7 @@ namespace Solitaire.Game
             int numCards = Math.Min(state.shoe.Count, numToDeal);
             ApplyMove(new Move.TakeFromShoe(numCards));
         }
-
+        
         private bool ApplyMove(Move.MoveType move)
         {
             bool valid;
@@ -252,7 +291,11 @@ namespace Solitaire.Game
             state = move.Apply(state, out valid);
 
             if (valid)
+            {
                 RedrawAll();
+                SetScore();
+                started = true;
+            }   
 
             return valid;
         }
@@ -265,6 +308,12 @@ namespace Solitaire.Game
             state = move.Reverse(state);
 
             RedrawAll();
+
+            SetScore();
+        }
+        private void SetScore()
+        {
+            scoreText.text = string.Format("{0}", state.Score);
         }
 
         public void Undo()

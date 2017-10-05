@@ -6,14 +6,49 @@ using UnityEngine;
 
 namespace Solitaire.Game.Move
 {
+    public interface IFaceDownable
+    {
+        bool FromFaceDown { get; }
+        void OnApplyUncover(Card uncovered);
+        void OnReverseUncover(Card covered);
+    }
+    public interface INotFaceDownable
+    {
+        void OnApplyUncover(Card uncovered);
+        void OnReverseUncover(Card covered);
+    }
+
+    internal static class FaceDownable
+    {
+        public static bool FlipUncovered(Card uncovered)
+        {
+            if (uncovered == null)
+                return false;
+            else if (!uncovered.FaceUp)
+                return uncovered.Flipped() is Card;
+            else
+                return false;
+        }
+        public static void FlipCovered(Card covered, IFaceDownable move)
+        {
+            if (covered == null)
+                return;
+            if (move.FromFaceDown)
+                covered.Flip();
+        }
+    }
+
     [Serializable]
     public abstract class MoveType
     {
+        public virtual bool FromFaceDown {
+            get { return false; }
+        }
         protected abstract List<Card> FromCards(GameState state);
         protected abstract List<Card> ToCards(GameState state);
 
-        protected virtual void OnApplyUncover(Card uncovered) { }
-        protected virtual void OnReverseUncover(Card uncovered) { }
+        public virtual void OnApplyUncover(Card uncovered) { }
+        public virtual void OnReverseUncover(Card covered) { }
 
         public abstract bool Valid(GameState initial);
 
@@ -48,7 +83,7 @@ namespace Solitaire.Game.Move
 
             var uncovered = from.Last();
 
-            if (uncovered != null)
+            if (this is IFaceDownable)
                 OnApplyUncover(uncovered);
 
             newState.history.Add(this);
@@ -62,12 +97,12 @@ namespace Solitaire.Game.Move
             var to = ToCards(newState);
             var from = FromCards(newState);
 
-            var uncovered = from.Last();
+            var covered = from.Last();
 
             from.Add(to.Pop());
-            
-            if (uncovered != null)
-                OnReverseUncover(uncovered);
+
+            if (this is IFaceDownable)
+                OnReverseUncover(covered);
 
             RemoveFromHistory(newState);
 
@@ -209,28 +244,23 @@ namespace Solitaire.Game.Move
     }
 
     [Serializable]
-    public class SortCardFromStack : SortCard
+    public class SortCardFromStack : SortCard, IFaceDownable
     {
         private int stack;
-        private bool fromFaceDown = false;
+        public new bool FromFaceDown { get; private set; }
 
         protected override List<Card> FromCards(GameState state)
         {
             return state.stacks[stack];
         }
 
-        protected override void OnApplyUncover(Card uncovered)
+        public override void OnApplyUncover(Card uncovered)
         {
-            if (!uncovered.FaceUp)
-            {
-                uncovered.Flip();
-                fromFaceDown = true;
-            }
+            FromFaceDown = FaceDownable.FlipUncovered(uncovered);
         }
-        protected override void OnReverseUncover(Card uncovered)
+        public override void OnReverseUncover(Card uncovered)
         {
-            if (fromFaceDown)
-                uncovered.Flip();
+            FaceDownable.FlipCovered(uncovered, this);
         }
         
         public SortCardFromStack(int fromStackIndex, int toSortedIndex)
@@ -303,8 +333,6 @@ namespace Solitaire.Game.Move
     [Serializable]
     public class StackCardFromExposed : StackCard
     {
-        private bool fromFaceDown;
-
         public StackCardFromExposed(int toStackIndex)
         {
             toStack = toStackIndex;
@@ -320,7 +348,6 @@ namespace Solitaire.Game.Move
     public class StackCardFromSorted : StackCard
     {
         private int fromSorted;
-        private bool fromFaceDown;
 
         public StackCardFromSorted(int fromSortedIndex, int toStackIndex)
         {
@@ -335,10 +362,10 @@ namespace Solitaire.Game.Move
     }
 
     [Serializable]
-    public class StackCardFromStack : StackCard
+    public class StackCardFromStack : StackCard, IFaceDownable
     {
         private int fromStack;
-        private bool fromFaceDown;
+        public new bool FromFaceDown { get; protected set; }
 
         public StackCardFromStack(int fromStackIndex, int toStackIndex)
         {
@@ -346,18 +373,13 @@ namespace Solitaire.Game.Move
             toStack = toStackIndex;
         }
 
-        protected override void OnApplyUncover(Card uncovered)
+        public override void OnApplyUncover(Card uncovered)
         {
-            if (!uncovered.FaceUp)
-            {
-                uncovered.Flip();
-                fromFaceDown = true;
-            }
+            FromFaceDown = FaceDownable.FlipUncovered(uncovered);
         }
-        protected override void OnReverseUncover(Card uncovered)
+        public override void OnReverseUncover(Card uncovered)
         {
-            if (fromFaceDown)
-                uncovered.Flip();
+            FaceDownable.FlipCovered(uncovered, this);
         }
 
         protected override List<Card> FromCards(GameState state)
@@ -367,9 +389,9 @@ namespace Solitaire.Game.Move
     }
 
     [Serializable]
-    public class MoveStack : MoveType
+    public class MoveStack : MoveType, IFaceDownable
     {
-        bool fromFaceDown = false;
+        public new bool FromFaceDown { get; protected set; }
         int fromStack;
         int fromIndex;
         int toStack;
@@ -458,18 +480,13 @@ namespace Solitaire.Game.Move
             return newState;
         }
 
-        protected override void OnApplyUncover(Card uncovered)
+        public override void OnApplyUncover(Card uncovered)
         {
-            if (!uncovered.FaceUp)
-            {
-                uncovered.Flip();
-                fromFaceDown = true;
-            }
+            FromFaceDown = FaceDownable.FlipUncovered(uncovered);
         }
-        protected override void OnReverseUncover(Card uncovered)
+        public override void OnReverseUncover(Card uncovered)
         {
-            if (fromFaceDown)
-                uncovered.Flip();
+            FaceDownable.FlipCovered(uncovered, this);
         }
     }
 }
