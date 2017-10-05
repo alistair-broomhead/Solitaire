@@ -1,9 +1,9 @@
 ﻿using Solitaire.Game.Objects.Card;
+using Solitaire.Game.Layout;
 using UnityEngine;
 using System.Collections.Generic;
 using System;
 using UnityEngine.UI;
-using Solitaire.Game.IListExtensions;
 
 namespace Solitaire.Game
 {
@@ -97,8 +97,8 @@ namespace Solitaire.Game
                 var stackPosition = stackPositions[i];
                 var stackCards = stacks[i];
 
-                LayoutElement[] stackedPositionArray = stackPosition.GetComponentsInChildren<LayoutElement>();
-                var stackedPositions = new List<LayoutElement>();
+                SubCell[] stackedPositionArray = stackPosition.GetComponentsInChildren<SubCell>();
+                var stackedPositions = new List<SubCell>();
 
                 foreach (var stackedPosition in stackedPositionArray)
                     if (stackedPosition.gameObject != stackPosition.gameObject)
@@ -189,7 +189,7 @@ namespace Solitaire.Game
         {
             var position = new GameObject(string.Format("Position {0}.{1}", i, j));
 
-            position.AddComponent<LayoutElement>();
+            position.AddComponent<SubCell>();
             position.transform.SetParent(stackPosition.transform);
             position.transform.localScale = new Vector3(1, 1, 1);
 

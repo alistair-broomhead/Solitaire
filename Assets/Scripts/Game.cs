@@ -6,7 +6,6 @@ using Solitaire.Game.Objects.Position;
 
 namespace Solitaire.Game
 {
-
     [Serializable]
     public class Game : MonoBehaviour
     {
@@ -30,8 +29,6 @@ namespace Solitaire.Game
 
         [SerializeField]
         private GameState state;
-
-        private string shoeTextureName;
 
         private void Reset()
         {
