@@ -10,7 +10,7 @@ namespace Solitaire.Game
     public class Game : MonoBehaviour
     {
         // Control how the deck is dealt
-        private static bool random = true;
+        public static bool random = true;
 
         protected static int numToDeal = 3;
 
