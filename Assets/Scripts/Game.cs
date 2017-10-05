@@ -1,5 +1,4 @@
-﻿#pragma warning disable 0649
-using Solitaire.Game.IListExtensions;
+﻿using Solitaire.Game.IListExtensions;
 using Solitaire.Game.Objects.Card;
 using UnityEngine;
 using System;
@@ -16,24 +15,33 @@ namespace Solitaire.Game
 
         protected static int numToDeal = 3;
 
-        [SerializeField]
-        private Text scoreText;
-        [SerializeField]
-        private Text timeText;
         private DateTime startTime;
         private bool started = false;
         private bool ended = false;
 
+        #pragma warning disable 0649
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2235:MarkAllNonSerializableFields")]
+        [SerializeField]
+        private Text scoreText;
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2235:MarkAllNonSerializableFields")]
+        [SerializeField]
+        private Text timeText;
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2235:MarkAllNonSerializableFields")]
         [SerializeField]
         public GameObject hoverParent;
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2235:MarkAllNonSerializableFields")]
         [SerializeField]
         private GameObject[] exposedPositions;
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2235:MarkAllNonSerializableFields")]
         [SerializeField]
         private GameObject[] stackPositions;
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2235:MarkAllNonSerializableFields")]
         [SerializeField]
         private GameObject[] sortedPositions;
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2235:MarkAllNonSerializableFields")]
         [SerializeField]
         private GameObject shoeTop;
+        #pragma warning restore 0649
 
         public static GameObject HoverParent;
 

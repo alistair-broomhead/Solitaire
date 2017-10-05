@@ -9,6 +9,7 @@ namespace Solitaire.Game.Objects.Card {
     [System.Serializable]
     public class CardBehaviour : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IDragHandler
     {
+        [System.NonSerialized]
         FixedPosition fixedPosition;
         
         List<Transform> transforms;

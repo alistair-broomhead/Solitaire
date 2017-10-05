@@ -11,6 +11,7 @@ namespace Solitaire.Game.Layout
         static internal float prefStackedHeight = 30;
         static internal float topHeight = 100;
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2235:MarkAllNonSerializableFields")]
         private LayoutElement layout;
 
         public void Awake()

@@ -7,6 +7,7 @@ namespace Solitaire.Game.Layout
     [Serializable]
     class Row : HorizontalLayoutGroup
     {
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2235:MarkAllNonSerializableFields")]
         private LayoutElement layout;
         
         protected override void Awake()

@@ -22,6 +22,7 @@ namespace Solitaire.Game.Objects
         private bool wasDragged;
 
         // What camera are we using for the current drag?
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2235:MarkAllNonSerializableFields")]
         private Camera eventCamera;
 
         // Where was the card when the current drag started?
@@ -37,6 +38,7 @@ namespace Solitaire.Game.Objects
 
         // We will need the canvas' transform in order to 
         // make consistent position calculations
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2235:MarkAllNonSerializableFields")]
         private RectTransform canvasTransform;
 
         // On pointer down we need to set up state to allow

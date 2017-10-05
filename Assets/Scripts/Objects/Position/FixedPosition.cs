@@ -4,7 +4,7 @@ using UnityEngine.UI;
 namespace Solitaire.Game.Objects.Position
 {
 
-    [System.Serializable]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Interoperability", "CA1405:ComVisibleTypeBaseTypesShouldBeComVisible")]
     public class FixedPosition : LayoutElement, IPosition
     {
         private Position position = null;
