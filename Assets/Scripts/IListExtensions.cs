@@ -5,7 +5,7 @@ namespace Solitaire.Game.IListExtensions
 {
     public static class IListExtensions
     {
-        public static void Shuffle<T>(this List<T> list)
+        public static void Shuffle<T>(this IList<T> list)
         {
             int count = list.Count;
             int last = count - 1;
@@ -18,7 +18,7 @@ namespace Solitaire.Game.IListExtensions
                 list[r] = tmp;
             }
         }
-        public static T PopAt<T>(this List<T> list, int index)
+        public static T PopAt<T>(this IList<T> list, int index)
         {
             if (index >= list.Count)
                 return default(T);
@@ -28,11 +28,11 @@ namespace Solitaire.Game.IListExtensions
 
             return value;
         }
-        public static T Pop<T>(this List<T> list)
+        public static T Pop<T>(this IList<T> list)
         {
             return list.PopAt(list.Count - 1);
         }
-        public static List<T> Copy<T>(this List<T> list)
+        public static List<T> Copy<T>(this IList<T> list)
         {
             var other = new List<T>();
 
@@ -41,7 +41,7 @@ namespace Solitaire.Game.IListExtensions
 
             return other;
         }
-        public static T Last<T>(this List<T> list)
+        public static T Last<T>(this IList<T> list)
         {
             if (list.Count == 0)
                 return default(T);
