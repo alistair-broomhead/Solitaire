@@ -10,7 +10,7 @@ namespace Solitaire.Game
     public class Game : MonoBehaviour
     {
         // Control how the deck is dealt
-        private static bool random = false;
+        private static bool random = true;
 
         protected static int numToDeal = 3;
 
@@ -257,20 +257,26 @@ namespace Solitaire.Game
             return valid;
         }
 
+        private void ReverseMove(Move.MoveType move)
+        {
+            if (move == null)
+                return;
+
+            state = move.Reverse(state);
+
+            RedrawAll();
+        }
+
         public void Undo()
         {
-            int takenMoves = state.history.Count;
+            var move = state.history.Last();
 
-            if (takenMoves > 0)
-            {
-                var move = state.history[takenMoves - 1];
-                state = move.Reverse(state);
+            if (move == null)
+                return;
 
-                Debug.LogFormat(this, "Reversed {0}", move);
+            state = move.Reverse(state);
 
-                RedrawAll();
-            }
-
+            RedrawAll();
         }
 
         private void RedrawAll()

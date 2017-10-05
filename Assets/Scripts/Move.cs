@@ -69,8 +69,7 @@ namespace Solitaire.Game.Move
             if (uncovered != null)
                 OnReverseUncover(uncovered);
 
-            if (newState.history.Pop() != this)
-                Debug.LogWarning("Reversing wrong move");
+            RemoveFromHistory(newState);
 
             return newState;
         }
