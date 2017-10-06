@@ -76,10 +76,9 @@ namespace Solitaire.Game.Objects.Card
         {
             if (behaviour == null) return;
 
-            if (faceUp)
-                behaviour.SetTexture(TextureCache.Get(suit, val));
-            else
-                behaviour.SetTexture(TextureCache.CardBack);
+            var texture = faceUp ? TextureCache.LoadByCard(suit, val) : TextureCache.CardBack;
+
+            behaviour.SetTexture(texture);
         }
 
         public Card(Suit cardSuit, CardValue cardValue)

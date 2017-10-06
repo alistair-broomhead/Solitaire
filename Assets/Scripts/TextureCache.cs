@@ -2,42 +2,66 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System;
+using System.IO;
 
 namespace Solitaire.Game
 {
     public static class TextureCache
     {
-        private static Texture2D cardBack = Resources.Load<Texture2D>("Cards/cardBack");
-        private static Texture2D cardOutline = Resources.Load<Texture2D>("Cards/outline");
+        private static AssetBundle cardBundle;
+
+        public static Texture2D LoadByName(string textureName)
+        {
+            if (cardBundle == null)
+            {
+                cardBundle = AssetBundle.LoadFromFile(Path.Combine(Application.streamingAssetsPath, "cards"));
+            }
+            if (texturesByName == null)
+                texturesByName = new Dictionary<string, Texture2D>();
+
+            if (!texturesByName.ContainsKey(textureName))
+            {
+                var texture = cardBundle.LoadAsset<Texture2D>(textureName);
+                texturesByName.Add(textureName, texture);
+            }
+                
+
+            return texturesByName[textureName];
+        }
+        public static Texture2D LoadByCard(Suit suit, CardValue value)
+        {
+            if (!cardTextures.ContainsKey(suit))
+                cardTextures.Add(suit, new Dictionary<CardValue, Texture2D>());
+
+            if (!cardTextures[suit].ContainsKey(value))
+            {
+                var cardName = string.Format(
+                    "{0}of{1}", 
+                    valueStrings[(int)value], 
+                    suitStrings[(int)suit]
+                );
+                var texture = LoadByName(cardName);
+                cardTextures[suit].Add(value, texture);
+            }
+            return cardTextures[suit][value];
+        }
+
+        private static Texture2D cardBack = LoadByName("cardBack");
+        private static Texture2D cardOutline = LoadByName("outline");
 
         public static Texture2D CardBack { get { return cardBack; } }
         public static Texture2D CardOutline { get { return cardOutline; } }
 
         private static Dictionary<Suit, Dictionary<CardValue, Texture2D>> cardTextures;
-
-        public static Texture2D Get(Suit suit, CardValue value) { return cardTextures[suit][value]; }
-
-        private static Texture2D LoadCardTexture(Suit suit, CardValue value)
-        {
-            string textureName = string.Format(
-                "Cards/{0}of{1}",
-                valueStrings[(int)value],
-                suitStrings[(int)suit]
-            );
-            return Resources.Load<Texture2D>(textureName);
-        }
-
+        private static Dictionary<string, Texture2D> texturesByName;
+        
         static TextureCache()
         {
             cardTextures = new Dictionary<Suit, Dictionary<CardValue, Texture2D>>();
             
             foreach (Suit suit in Enum.GetValues(typeof(Suit)))
-            {
-                cardTextures.Add(suit, new Dictionary<CardValue, Texture2D>());
-
                 foreach (CardValue value in Enum.GetValues(typeof(CardValue)))
-                    cardTextures[suit].Add(value, LoadCardTexture(suit, value));
-            }
+                    LoadByCard(suit, value);
         }
 
         private static string[] suitStrings = {

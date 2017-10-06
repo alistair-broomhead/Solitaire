@@ -34,17 +34,12 @@ namespace Solitaire.Game
 
         public static void RedrawShoe(List<Card> shoe)
         {
-            string correctShoeTextureName;
-
-            if (shoe.Count > 0)
-                correctShoeTextureName = "Cards/CardBack";
-            else
-                correctShoeTextureName = "Cards/Outline";
-
+            string correctShoeTextureName = shoe.Count > 0? "CardBack" : "Outline";
+            
             if (shoeTextureName != correctShoeTextureName)
             {
                 Image image = shoeTop.GetComponent<Image>();
-                Texture2D texture = Resources.Load<Texture2D>(correctShoeTextureName);
+                Texture2D texture = TextureCache.LoadByName(correctShoeTextureName);
                 Sprite oldSprite = image.sprite;
                 image.sprite = Sprite.Create(
                     texture,
