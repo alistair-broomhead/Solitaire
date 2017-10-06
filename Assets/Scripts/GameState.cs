@@ -44,6 +44,25 @@ namespace Solitaire.Game
             }
         }
 
+        public bool Won
+        {
+            get
+            {
+                int Sorted = 0;
+                int toSort = shoe.Count;
+
+                toSort += exposed.Count;
+
+                foreach (var stack in stacks)
+                    toSort += stack.Count;
+
+                foreach (var stack in sorted)
+                    Sorted += stack.Count;
+
+                return (toSort == 0) && (Sorted == 52);
+            }
+        }
+
         public GameState()
         {
             history = new List<MoveType>();

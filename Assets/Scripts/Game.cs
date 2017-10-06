@@ -16,10 +16,16 @@ namespace Solitaire.Game
         protected static int numToDeal = 3;
 
         private DateTime startTime;
+        private TimeSpan timePassed;
         private bool started = false;
         private bool ended = false;
+        private bool paused = false;
 
-        #pragma warning disable 0649
+
+#pragma warning disable 0649
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2235:MarkAllNonSerializableFields")]
+        [SerializeField]
+        private GameObject pauseBanner;
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2235:MarkAllNonSerializableFields")]
         [SerializeField]
         private Text scoreText;
@@ -54,6 +60,8 @@ namespace Solitaire.Game
                 Destroy(card.gameObject);
 
             state = new GameState();
+            pauseBanner.SetActive(false);
+            GamePlay.Reset();
         }
 
         // Use this for initialization
@@ -82,29 +90,17 @@ namespace Solitaire.Game
 
         private void Update()
         {
-            if (!started)
-                startTime = DateTime.Now;
-            else if (!ended)
+            if (GamePlay.Running)
             {
-                bool justEnded = (
-                    (state.shoe.Count == 0) &&
-                    (state.exposed.Count == 0)
-                );
-
-                foreach (var stack in state.stacks)
-                    justEnded &= (stack.Count == 0);
-
-                var gameTime = DateTime.Now - startTime;
+                if (state.Won)
+                    GamePlay.Stop();
 
                 timeText.text = string.Format(
                     "{0:00}:{1:00}",
-                    gameTime.Minutes,
-                    gameTime.Seconds
+                    GamePlay.TimePassed.Minutes,
+                    GamePlay.TimePassed.Seconds
                 );
-
-                ended = justEnded;
             }
-
         }
 
         private void DealCardsSolvable()
@@ -302,7 +298,9 @@ namespace Solitaire.Game
             {
                 RedrawAll();
                 SetScore();
-                started = true;
+
+                if (!GamePlay.Running)
+                    GamePlay.Start();
             }   
 
             return valid;
@@ -334,6 +332,15 @@ namespace Solitaire.Game
             state = move.Reverse(state);
 
             RedrawAll();
+        }
+        public void Pause()
+        {
+            pauseBanner.SetActive(GamePlay.Running);
+            GamePlay.PauseOrResume();
+        }
+        public void Stop()
+        {
+
         }
 
         private void RedrawAll()
