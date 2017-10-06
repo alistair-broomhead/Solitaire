@@ -217,7 +217,7 @@ PlayerSettings:
   AndroidTargetDevice: 0
   AndroidSplashScreenScale: 0
   androidSplashScreen: {fileID: 0}
-  AndroidKeystoreName: ~/Dropbox/Google Play/Solitaire/solitaire.keystore
+  AndroidKeystoreName: solitaire.keystore
   AndroidKeyaliasName: upload key
   AndroidTVCompatibility: 1
   AndroidIsGame: 1
