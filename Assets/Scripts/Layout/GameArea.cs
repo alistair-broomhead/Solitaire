@@ -8,8 +8,8 @@ namespace Solitaire.Game.Layout
     class GameArea : MonoBehaviour
     {
         public LayoutTemplate layout;
-        public LayoutTemplate pLayout;
-        public LayoutTemplate lLayout;
+        public LayoutTemplate portrait;
+        public LayoutTemplate landscape;
 
         private VerticalLayoutGroup group;
 

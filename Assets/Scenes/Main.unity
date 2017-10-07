@@ -1066,8 +1066,6 @@ MonoBehaviour:
   virtualLandscapeHeight: 600
   numRows: 2
   numColumns: 7
-  currentDimensions: {x: 0, y: 0}
-  dimensionStability: 0
 --- !u!114 &202575495
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3088,7 +3086,7 @@ MonoBehaviour:
   m_ChildAlignment: 0
   m_Spacing: 0
   m_ChildForceExpandWidth: 1
-  m_ChildForceExpandHeight: 0
+  m_ChildForceExpandHeight: 1
   m_ChildControlWidth: 1
   m_ChildControlHeight: 1
 --- !u!114 &663304230
@@ -4264,9 +4262,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 544c8ebb149bc884b94c3f1cc8436e81, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  layout: {fileID: 1322262214}
-  pLayout: {fileID: 1322262214}
-  lLayout: {fileID: 497853112}
+  layout: {fileID: 0}
+  portrait: {fileID: 1322262214}
+  landscape: {fileID: 497853112}
 --- !u!114 &1386235209
 MonoBehaviour:
   m_ObjectHideFlags: 0

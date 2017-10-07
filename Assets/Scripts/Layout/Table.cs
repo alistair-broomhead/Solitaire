@@ -24,6 +24,7 @@ namespace Solitaire.Game.Layout
         private RectTransform gameTransform;
 
         private Row[] rows;
+        private Orientation orientation;
 
         [SerializeField]
         private float virtualPortraitWidth = 490.0f;
@@ -34,25 +35,52 @@ namespace Solitaire.Game.Layout
         private int numRows;
         [SerializeField]
         private int numColumns;
-        [SerializeField]
-        private Vector2 currentDimensions;
-        [SerializeField]
-        private int dimensionStability = 0;
-        
+
+        private LayoutTemplate[] layouts;
+        private LayoutTemplate ActiveLayout
+        {
+            get
+            {
+                if (gameArea == null)
+                    return null;
+
+                return gameArea.layout;
+            }
+            set
+            {
+                if (gameArea == null)
+                    return;
+
+                if (layouts == null)
+                    layouts = new LayoutTemplate[] {
+                        gameArea.portrait,
+                        gameArea.landscape
+                    };
+
+                foreach (var layout in layouts)
+                    if (layout != value)
+                        layout.gameObject.SetActive(false);
+
+                gameArea.layout = value;
+                gameArea.layout.gameObject.SetActive(true);
+            }
+        }
+
         protected void Awake()
         {
+
+            orientation = Orientation.Unknown;
             gameArea = GetComponentInChildren<GameArea>();
             gameTransform = gameArea.GetComponent<RectTransform>();
 
             if (cloneArea == null)
+            {
                 cloneArea = new GameObject("cloneArea");
-
-            cloneTransform = cloneArea.GetComponent<RectTransform>();
-
-            if (cloneTransform == null)
                 cloneTransform = cloneArea.AddComponent<RectTransform>();
-
-            cloneTransform.SetParent(transform);
+                cloneTransform.SetParent(transform);
+                cloneTransform.localScale = new Vector3(1, 1, 1);
+                cloneTransform.position = new Vector3();
+            }
 
             rows = GetComponentsInChildren<Row>();
             numRows = rows.Length;
@@ -63,49 +91,46 @@ namespace Solitaire.Game.Layout
 
             if (GetComponent<RectTransform>() == null)
                 gameObject.AddComponent<RectTransform>();
+
+            Resize();
         }
         public void Update()
         {
+            if (orientation == Orientation.Unknown)
+                Resize();
+
             foreach (var row in rows)
                 row.OnUpdate();
+        }
+        private void OnRectTransformDimensionsChange()
+        {
+            Resize();
+        }
+        private void Resize()
+        {
+            if (gameArea == null)
+                return;
 
-            var parentDimensions = LayoutUtils.Dimensions((RectTransform) transform.parent);
-
-            if (parentDimensions == currentDimensions)
-                // Allow for jitteriness
-                if (dimensionStability > 100)
-                    return;
-                else
-                    dimensionStability++;
-            else
-            {
-                currentDimensions = parentDimensions;
-                dimensionStability = 0;
-            }
-
-            Orientation orientation;
-
+            var parentDimensions = LayoutUtils.Dimensions((RectTransform)transform.parent);
+            
             if (parentDimensions.x > parentDimensions.y)
                 orientation = Orientation.Landscape;
             else
                 orientation = Orientation.Portrait;
             
-            gameArea.layout.gameObject.SetActive(false);
-            
             if (orientation == Orientation.Portrait)
                 ResizePortrait();
             else
                 ResizeLandscape();
-
         }
         private void ResizePortrait()
         {
-            gameArea.layout = gameArea.pLayout;
+            ActiveLayout = gameArea.portrait;
             Resize(virtualPortraitWidth, 0);
         }
         private void ResizeLandscape()
         {
-            gameArea.layout = gameArea.lLayout;
+            ActiveLayout = gameArea.landscape;
             Resize(virtualLandscapeHeight, 1);
         }
         private void ApplyRect(RectTransform source, RectTransform dest)
@@ -115,9 +140,7 @@ namespace Solitaire.Game.Layout
         }
         private void Resize(float toSize, int limitedDimension)
         {
-            gameArea.layout.gameObject.SetActive(true);
-
-            var proxyTransform = gameArea.layout.gameProxy.GetComponent<RectTransform>();
+            var proxyTransform = ActiveLayout.gameProxy.GetComponent<RectTransform>();
             var thisTransform = GetComponent<RectTransform>();
 
             ApplyRect(proxyTransform, thisTransform);

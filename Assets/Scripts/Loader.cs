@@ -21,7 +21,6 @@ namespace Solitaire.Game
         }
         private void Update()
         {
-            Debug.Log("rotate!");
             var now = DateTime.Now;
             var since = now - start;
             float angle = (float)since.TotalMilliseconds / 2;
