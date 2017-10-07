@@ -33,6 +33,16 @@ public static class DirUtils
         if (info.Exists)
             info.Delete(true);
     }
+    public static void RmContent(string dirName)
+    {
+        var info = new DirectoryInfo(dirName);
+
+        foreach (var file in info.GetFiles())
+            file.Delete();
+
+        foreach (var dir in info.GetDirectories())
+            dir.Delete(true);
+    }
     public static void Cp(string fromDir, string toDir)
     {
         var fromInfo = new DirectoryInfo(fromDir);
@@ -118,10 +128,16 @@ public class ProjectUtils
     public static void BuildAll ()
     {
         var scenes = Scenes;
-        DirUtils.Rm(Constants.BuildPath);
+        DirUtils.RmContent(Constants.BuildPath);
 
         foreach (var platform in Constants.platforms)
-            BuildPlatform(platform, scenes);
+            if (platform == BuildTarget.Android)
+            {
+                BuildAndroidRelease();
+                BuildAndroidDebug();
+            }
+            else
+                BuildPlatform(platform, scenes);
         
         CreateAssetBundles.EnsureBuilt();
     }
@@ -134,13 +150,50 @@ public class ProjectUtils
         CreateAssetBundles.EnsureBuilt();
     }
 
+    [MenuItem("Build/Build Android Debug")]
+    public static void BuildAndroidDebug()
+    {
+        string oldProductName = PlayerSettings.productName;
+        string oldPackageName = PlayerSettings.applicationIdentifier;
+        try
+        {
+            PlayerSettings.productName += " Debug";
+            PlayerSettings.applicationIdentifier += ".Debug";
+            BuildPlatform(BuildTarget.Android, Scenes);
+        }
+        finally
+        {
+            PlayerSettings.productName = oldProductName;
+            PlayerSettings.applicationIdentifier = oldPackageName;
+        }
+
+        CreateAssetBundles.EnsureBuilt();
+    }
+
+    [MenuItem("Build/Build Android Release")]
+    public static void BuildAndroidRelease()
+    {
+        PlayerSettings.Android.bundleVersionCode++;
+        try
+        {
+            BuildPlatform(BuildTarget.Android, Scenes);
+        }
+        catch
+        {
+            PlayerSettings.Android.bundleVersionCode--;
+            throw;
+        }
+
+        CreateAssetBundles.EnsureBuilt();
+    }
+
     private static readonly Dictionary<BuildTarget, string[]> packageNames = new Dictionary<BuildTarget, string[]>
     {
-        {BuildTarget.Android, new string[]{"Android", "Solitaire.apk"}},
-        {BuildTarget.WebGL, new string[]{"WebGL", "Solitaire"}},
-        {BuildTarget.StandaloneWindows64, new string[]{ "Win64", "Solitaire.exe"}},
-        {BuildTarget.StandaloneOSXIntel64, new string[]{ "OSX64", "Solitaire.app"}},
-        {BuildTarget.StandaloneLinux64, new string[]{ "Linux64", "Solitaire"}}, 
+        {BuildTarget.Android, new string[]{"Android", ".apk"}},
+        {BuildTarget.WebGL, new string[]{"WebGL", ""}},
+        {BuildTarget.StandaloneWindows64, new string[]{ "Win64", ".exe"}},
+        {BuildTarget.StandaloneOSXIntel64, new string[]{ "OSX64", ".app"}},
+        {BuildTarget.StandaloneLinux64, new string[]{ "Linux64", ".bin"}}, 
     };
 
     public static void BuildPlatform(BuildTarget platform, string[] scenes)
@@ -152,7 +205,7 @@ public class ProjectUtils
         }
 
         string packageDir = packageNames[platform][0];
-        string packageName = packageNames[platform][1];
+        string packageName = PlayerSettings.productName + packageNames[platform][1];
         
         var previousGroup = EditorUserBuildSettings.selectedBuildTargetGroup;
         var previousTarget = EditorUserBuildSettings.activeBuildTarget;
@@ -161,8 +214,6 @@ public class ProjectUtils
             Directory.CreateDirectory(Constants.BuildPath);
 
         var platformDir = Path.Combine(Constants.BuildPath, packageDir);
-        DirUtils.Rm(platformDir);
-
         var platformPath = Path.Combine(platformDir, packageName);
         try
         {
