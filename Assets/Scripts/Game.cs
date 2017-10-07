@@ -17,12 +17,6 @@ namespace Solitaire.Game
 
         protected static int numToDeal = 3;
 
-        private DateTime startTime;
-        private TimeSpan timePassed;
-        private bool started = false;
-        private bool ended = false;
-        private bool paused = false;
-
 #pragma warning disable 0649
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2235:MarkAllNonSerializableFields")]
         [SerializeField]
@@ -79,8 +73,6 @@ namespace Solitaire.Game
                 DealCardsSolvable();
             
             yield return RedrawAll();
-            
-            startTime = DateTime.Now;
         }
         
         public IEnumerator SetUp()
