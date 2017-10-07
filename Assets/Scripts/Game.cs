@@ -324,6 +324,9 @@ namespace Solitaire.Game
 
         public void Undo()
         {
+            if (!GamePlay.Running)
+                return;
+
             var move = state.history.Last();
 
             if (move == null)
