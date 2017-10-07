@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Solitaire.Game.Layout
@@ -23,18 +24,20 @@ namespace Solitaire.Game.Layout
         private RectTransform gameTransform;
 
         private Row[] rows;
+
+        [SerializeField]
+        private float virtualPortraitWidth = 490.0f;
+        [SerializeField]
+        private float virtualLandscapeHeight = 600f;
         
-        private static readonly float virtualPortraitWidth = 490.0f;
-        private static readonly float virtualLandscapeHeight = 600f;
-
-
         [SerializeField]
         private int numRows;
-
         [SerializeField]
         private int numColumns;
-
+        [SerializeField]
         private Vector2 currentDimensions;
+        [SerializeField]
+        private int dimensionStability = 0;
         
         protected void Awake()
         {
@@ -63,12 +66,22 @@ namespace Solitaire.Game.Layout
         }
         public void Update()
         {
+            foreach (var row in rows)
+                row.OnUpdate();
+
             var parentDimensions = LayoutUtils.Dimensions((RectTransform) transform.parent);
 
             if (parentDimensions == currentDimensions)
-                return;
+                // Allow for jitteriness
+                if (dimensionStability > 100)
+                    return;
+                else
+                    dimensionStability++;
             else
+            {
                 currentDimensions = parentDimensions;
+                dimensionStability = 0;
+            }
 
             Orientation orientation;
 
@@ -76,10 +89,7 @@ namespace Solitaire.Game.Layout
                 orientation = Orientation.Landscape;
             else
                 orientation = Orientation.Portrait;
-
-            foreach (var row in rows)
-                row.OnUpdate();
-
+            
             gameArea.layout.gameObject.SetActive(false);
             
             if (orientation == Orientation.Portrait)

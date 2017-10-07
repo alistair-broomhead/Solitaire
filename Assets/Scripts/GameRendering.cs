@@ -4,6 +4,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System;
 using UnityEngine.UI;
+using System.Collections;
 
 namespace Solitaire.Game
 {
@@ -24,12 +25,12 @@ namespace Solitaire.Game
             shoeTop = shoe;
         }
 
-        public static void RedrawAll(GameState state)
+        public static IEnumerator RedrawAll(GameState state)
         {
             RedrawShoe(state.shoe);
-            RedrawExposed(state.exposed);
-            RedrawStacks(state.stacks);
-            RedrawSorted(state.sorted);
+            yield return RedrawExposed(state.exposed);
+            yield return RedrawStacks(state.stacks);
+            yield return RedrawSorted(state.sorted);
         }
 
         public static void RedrawShoe(List<Card> shoe)
@@ -51,7 +52,7 @@ namespace Solitaire.Game
             }
         }
 
-        public static void RedrawExposed(List<Card> exposed)
+        public static IEnumerator RedrawExposed(List<Card> exposed)
         {
             int numCards = Math.Min(3, exposed.Count);
 
@@ -64,28 +65,33 @@ namespace Solitaire.Game
                 var behaviour = position.GetComponentInChildren<CardBehaviour>();
                 if (behaviour != null)
                     GameObject.Destroy(behaviour.gameObject);
+
+                yield return null;
             }
 
-            if (numCards == 0) return;
+            if (numCards > 0)
+                for (int i = 0; i < numCards; i++)
+                {
+                    yield return null;
 
-            for (int i = 0; i < numCards; i++)
-            {
-                Card card = exposed[minExposed + i];
-                GameObject position = exposedPositions[minPos + i];
+                    Card card = exposed[minExposed + i];
+                    GameObject position = exposedPositions[minPos + i];
 
-                var behaviour = position.GetComponentInChildren<CardBehaviour>();
+                    var behaviour = position.GetComponentInChildren<CardBehaviour>();
 
-                if (behaviour == null)
-                    behaviour = CreateCard();
+                    if (behaviour == null)
+                        behaviour = CreateCard();
 
-                ChangeCard(card, position, behaviour);
+                    ChangeCard(card, position, behaviour);
 
-                if (i == numCards - 1)
-                    behaviour.acceptMouseEvents = true;
-            }
+                    if (i == numCards - 1)
+                        behaviour.acceptMouseEvents = true;
+
+                    yield return null;
+                }
         }
 
-        public static void RedrawStacks(List<Card>[] stacks)
+        public static IEnumerator RedrawStacks(List<Card>[] stacks)
         {
             for (int i = 0; i < stacks.Length; i++)
             {
@@ -99,8 +105,11 @@ namespace Solitaire.Game
                     if (stackedPosition.gameObject != stackPosition.gameObject)
                         stackedPositions.Add(stackedPosition);
 
+                yield return null;
+
                 for (int j = 0; j < stackCards.Count; j++)
                 {
+                    yield return null;
                     var card = stackCards[j];
 
                     if (j < stackedPositions.Count)
@@ -114,13 +123,14 @@ namespace Solitaire.Game
                         StackTransformCard(behaviour);
                     }
                     card.Behaviour.acceptMouseEvents = card.FaceUp;
+                    yield return null;
                 }
                 for (int j = stackCards.Count; j < stackedPositions.Count; j++)
                     GameObject.Destroy(stackedPositions[j].gameObject);
             }
         }
 
-        public static void RedrawSorted(List<Card>[] stacks)
+        public static IEnumerator RedrawSorted(List<Card>[] stacks)
         {
             for (int i = 0; i < stacks.Length; i++)
             {
@@ -137,6 +147,7 @@ namespace Solitaire.Game
 
                 for (int j = 0; j < numRender; j++)
                 {
+                    yield return null;
                     Card card = stack[j + stackFrom];
 
                     CardBehaviour behaviour;
@@ -149,6 +160,7 @@ namespace Solitaire.Game
                     ChangeCard(card, sortedPositions[i], behaviour);
 
                     behaviour.acceptMouseEvents = (j == numRender - 1);
+                    yield return null;
                 }   
             }   
         }

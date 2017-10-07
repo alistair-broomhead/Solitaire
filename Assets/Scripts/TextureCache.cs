@@ -52,18 +52,9 @@ namespace Solitaire.Game
         public static Texture2D CardBack { get { return cardBack; } }
         public static Texture2D CardOutline { get { return cardOutline; } }
 
-        private static Dictionary<Suit, Dictionary<CardValue, Texture2D>> cardTextures;
+        private static Dictionary<Suit, Dictionary<CardValue, Texture2D>> cardTextures = new Dictionary<Suit, Dictionary<CardValue, Texture2D>>();
         private static Dictionary<string, Texture2D> texturesByName;
         
-        static TextureCache()
-        {
-            cardTextures = new Dictionary<Suit, Dictionary<CardValue, Texture2D>>();
-            
-            foreach (Suit suit in Enum.GetValues(typeof(Suit)))
-                foreach (CardValue value in Enum.GetValues(typeof(CardValue)))
-                    LoadByCard(suit, value);
-        }
-
         private static string[] suitStrings = {
             "Hearts",
             "Clubs",

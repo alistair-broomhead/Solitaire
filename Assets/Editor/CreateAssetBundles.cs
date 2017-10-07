@@ -9,22 +9,31 @@ public static class Constants
     public readonly static string BuildPath = "Builds";
     public readonly static BuildTarget[] platforms = new BuildTarget[] {
         BuildTarget.Android,
-        BuildTarget.WebGL,
         BuildTarget.StandaloneWindows64,
-        BuildTarget.StandaloneOSXIntel64,
-        BuildTarget.StandaloneLinux64,
+        // BuildTarget.WebGL,
+        // BuildTarget.StandaloneOSXIntel64,
+        // BuildTarget.StandaloneLinux64,
+    };
+    
+    public readonly static Dictionary<BuildTarget, string[]> packageNames = new Dictionary<BuildTarget, string[]>
+    {
+        {BuildTarget.Android, new string[]{"Android", ".apk"}},
+        {BuildTarget.WebGL, new string[]{"WebGL", ""}},
+        {BuildTarget.StandaloneWindows64, new string[]{ "Win64", ".exe"}},
+        {BuildTarget.StandaloneOSXIntel64, new string[]{ "OSX64", ".app"}},
+        {BuildTarget.StandaloneLinux64, new string[]{ "Linux64", ".bin"}},
     };
 }
 
 public static class DirUtils
 {
-    public static void RmPlatform()
+    public static void RmPlatformBundle()
     {
-        RmPlatform(EditorUserBuildSettings.activeBuildTarget);
+        RmPlatformBundle(EditorUserBuildSettings.activeBuildTarget);
     }
-    public static void RmPlatform(BuildTarget platform)
+    public static void RmPlatformBundle(BuildTarget platform)
     {
-        Rm(Platform(platform));
+        RmContent(PlatformBundle(platform));
     }
     public static void Rm(string dirName)
     {
@@ -35,13 +44,23 @@ public static class DirUtils
     }
     public static void RmContent(string dirName)
     {
+        if (dirName == null)
+            return;
+
         var info = new DirectoryInfo(dirName);
+
+        if (!info.Exists)
+            return;
 
         foreach (var file in info.GetFiles())
             file.Delete();
 
         foreach (var dir in info.GetDirectories())
             dir.Delete(true);
+    }
+    public static void RmBuild(BuildTarget platform)
+    {
+        RmContent(PlatformBuildDir(platform));
     }
     public static void Cp(string fromDir, string toDir)
     {
@@ -61,13 +80,29 @@ public static class DirUtils
         foreach (var subDir in fromInfo.GetDirectories())
             Cp(subDir.FullName, Path.Combine(toDir, subDir.Name));
     }
-    public static string Platform()
+    public static string PlatformBundle()
     {
-        return Platform(EditorUserBuildSettings.activeBuildTarget);
+        return PlatformBundle(EditorUserBuildSettings.activeBuildTarget);
     }
-    public static string Platform(BuildTarget platform)
+    public static string PlatformBundle(BuildTarget platform)
     {
         return Path.Combine(Constants.assetBundlePath, platform.ToString());
+    }
+    public static string PlatformBuildPath(BuildTarget platform)
+    {
+        if (!Constants.packageNames.ContainsKey(platform))
+            return null;
+
+        var platformDir = Path.Combine(Constants.BuildPath, Constants.packageNames[platform][0]);
+        var packageName = PlayerSettings.productName + Constants.packageNames[platform][1];
+        return Path.Combine(platformDir, packageName);
+    }
+    public static string PlatformBuildDir(BuildTarget platform)
+    {
+        if (!Constants.packageNames.ContainsKey(platform))
+            return null;
+
+        return Path.Combine(Constants.BuildPath, Constants.packageNames[platform][0]);
     }
 }
 
@@ -77,13 +112,11 @@ public class CreateAssetBundles
     [MenuItem("Build/AssetBundles")]
     static void BuildAllAssetBundles()
     {
-        DirUtils.RmPlatform();
-
-        DirUtils.Rm(Application.streamingAssetsPath);
+        DirUtils.RmPlatformBundle();
         
         foreach (var platform in Constants.platforms)
         {
-            DirUtils.RmPlatform(platform);
+            DirUtils.RmPlatformBundle(platform);
             EnsureBuilt(platform);
         }
 
@@ -99,13 +132,21 @@ public class CreateAssetBundles
     }
     public static void EnsureBuilt(BuildTarget platform, bool setStreamingAssets)
     {
-        string directory = DirUtils.Platform(platform);
+        string directory = DirUtils.PlatformBundle(platform);
 
-        if (!Directory.Exists(directory))
+        bool mustBuild = !Directory.Exists(directory);
+        bool platformChange = (platform != EditorUserBuildSettings.activeBuildTarget);
+
+        if (mustBuild)
             BuildPlatform(platform, directory);
 
-        if (setStreamingAssets)
+        if (setStreamingAssets && (mustBuild || platformChange))
+        {
+            var group = BuildPipeline.GetBuildTargetGroup(platform);
+            EditorUserBuildSettings.SwitchActiveBuildTarget(group, platform);
+            DirUtils.RmContent(Application.streamingAssetsPath);
             DirUtils.Cp(directory, Application.streamingAssetsPath);
+        }
     }
 
     static void BuildPlatform(BuildTarget platform, string directory)
@@ -128,13 +169,15 @@ public class ProjectUtils
     public static void BuildAll ()
     {
         var scenes = Scenes;
-        DirUtils.RmContent(Constants.BuildPath);
+
+        foreach(var platform in Constants.platforms)
+            DirUtils.RmBuild(platform);
 
         foreach (var platform in Constants.platforms)
             if (platform == BuildTarget.Android)
             {
-                BuildAndroidRelease();
                 BuildAndroidDebug();
+                BuildAndroidRelease();
             }
             else
                 BuildPlatform(platform, scenes);
@@ -158,13 +201,13 @@ public class ProjectUtils
         try
         {
             PlayerSettings.productName += " Debug";
-            PlayerSettings.applicationIdentifier += ".Debug";
+            PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, oldPackageName + ".Debug");
             BuildPlatform(BuildTarget.Android, Scenes);
         }
         finally
         {
             PlayerSettings.productName = oldProductName;
-            PlayerSettings.applicationIdentifier = oldPackageName;
+            PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, oldPackageName);
         }
 
         CreateAssetBundles.EnsureBuilt();
@@ -187,25 +230,17 @@ public class ProjectUtils
         CreateAssetBundles.EnsureBuilt();
     }
 
-    private static readonly Dictionary<BuildTarget, string[]> packageNames = new Dictionary<BuildTarget, string[]>
-    {
-        {BuildTarget.Android, new string[]{"Android", ".apk"}},
-        {BuildTarget.WebGL, new string[]{"WebGL", ""}},
-        {BuildTarget.StandaloneWindows64, new string[]{ "Win64", ".exe"}},
-        {BuildTarget.StandaloneOSXIntel64, new string[]{ "OSX64", ".app"}},
-        {BuildTarget.StandaloneLinux64, new string[]{ "Linux64", ".bin"}}, 
-    };
+    private static readonly Dictionary<BuildTarget, string[]> packageNames = Constants.packageNames;
 
     public static void BuildPlatform(BuildTarget platform, string[] scenes)
     {
-        if (!packageNames.ContainsKey(platform))
+        var platformPath = DirUtils.PlatformBuildPath(platform);
+
+        if (platformPath == null)
         {
             Debug.LogWarningFormat(string.Format("Do not know info for {0}", platform));
             return;
         }
-
-        string packageDir = packageNames[platform][0];
-        string packageName = PlayerSettings.productName + packageNames[platform][1];
         
         var previousGroup = EditorUserBuildSettings.selectedBuildTargetGroup;
         var previousTarget = EditorUserBuildSettings.activeBuildTarget;
@@ -213,8 +248,6 @@ public class ProjectUtils
         if (!Directory.Exists(Constants.BuildPath))
             Directory.CreateDirectory(Constants.BuildPath);
 
-        var platformDir = Path.Combine(Constants.BuildPath, packageDir);
-        var platformPath = Path.Combine(platformDir, packageName);
         try
         {
             CreateAssetBundles.EnsureBuilt(platform, setStreamingAssets:true);
