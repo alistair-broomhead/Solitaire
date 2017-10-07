@@ -4,6 +4,7 @@ using UnityEngine;
 using System;
 using Solitaire.Game.Objects.Position;
 using UnityEngine.UI;
+using Solitaire.Game.Layout;
 
 namespace Solitaire.Game
 {

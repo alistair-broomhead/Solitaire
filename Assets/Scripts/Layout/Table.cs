@@ -23,12 +23,18 @@ namespace Solitaire.Game.Layout
         private RectTransform gameTransform;
 
         private Row[] rows;
+        
+        private static readonly float virtualPortraitWidth = 490.0f;
+        private static readonly float virtualLandscapeHeight = 600f;
+
 
         [SerializeField]
         private int numRows;
 
         [SerializeField]
         private int numColumns;
+
+        private Vector2 currentDimensions;
         
         protected void Awake()
         {
@@ -59,6 +65,11 @@ namespace Solitaire.Game.Layout
         {
             var parentDimensions = LayoutUtils.Dimensions((RectTransform) transform.parent);
 
+            if (parentDimensions == currentDimensions)
+                return;
+            else
+                currentDimensions = parentDimensions;
+
             Orientation orientation;
 
             if (parentDimensions.x > parentDimensions.y)
@@ -68,6 +79,8 @@ namespace Solitaire.Game.Layout
 
             foreach (var row in rows)
                 row.OnUpdate();
+
+            gameArea.layout.gameObject.SetActive(false);
             
             if (orientation == Orientation.Portrait)
                 ResizePortrait();
@@ -77,16 +90,30 @@ namespace Solitaire.Game.Layout
         }
         private void ResizePortrait()
         {
-            Resize(490.0f, 0);
+            gameArea.layout = gameArea.pLayout;
+            Resize(virtualPortraitWidth, 0);
         }
         private void ResizeLandscape()
         {
-            Resize(480f, 1);
+            gameArea.layout = gameArea.lLayout;
+            Resize(virtualLandscapeHeight, 1);
+        }
+        private void ApplyRect(RectTransform source, RectTransform dest)
+        {
+            dest.sizeDelta = source.sizeDelta;
+            dest.position = source.position;
         }
         private void Resize(float toSize, int limitedDimension)
         {
+            gameArea.layout.gameObject.SetActive(true);
+
+            var proxyTransform = gameArea.layout.gameProxy.GetComponent<RectTransform>();
+            var thisTransform = GetComponent<RectTransform>();
+
+            ApplyRect(proxyTransform, thisTransform);
+
             // Get the size of this object
-            var size = LayoutUtils.Dimensions(GetComponent<RectTransform>());
+            var size = LayoutUtils.Dimensions(proxyTransform);
             // What factor should we multiply the dimensions
             // by in order to set the limitedDimension to
             // the requested size?
