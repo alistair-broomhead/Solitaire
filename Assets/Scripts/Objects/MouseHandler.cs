@@ -8,42 +8,51 @@ using UnityEngine.EventSystems;
 namespace Solitaire.Game.Objects
 {
     [System.Serializable]
-    public class MouseHandler
+    public static class MouseHandler
     {
-        private CardBehaviour behaviour;
-        public MouseHandler(CardBehaviour handled, Canvas canvas)
-        {
-            behaviour = handled;
-            canvasTransform = canvas.transform as RectTransform;
-        }
+        // What behaviour are we handling?
+        private static CardBehaviour handling;
 
         // Has there been a Drag since the las PointerDown 
         // event?
-        private bool wasDragged;
+        private static bool wasDragged;
 
         // What camera are we using for the current drag?
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2235:MarkAllNonSerializableFields")]
-        private Camera eventCamera;
+        private static Camera eventCamera;
 
         // Where was the card when the current drag started?
-        public List<Vector3> leftPoints;
+        public static List<Vector3> leftPoints;
 
         // What's the canvas offset between where the click 
         // started 
         // and the initial local card position?
-        private List<Vector2> pointerOffsets;
+        private static List<Vector2> pointerOffsets;
 
         // What position was this attached to?
-        private List<Transform> fromPositions;
+        private static List<Transform> fromPositions;
 
         // We will need the canvas' transform in order to 
         // make consistent position calculations
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2235:MarkAllNonSerializableFields")]
-        private RectTransform canvasTransform;
+        private static RectTransform canvasTransform;
 
+        private static void SetBehaviour(CardBehaviour handled)
+		{
+            handling = handled;
+			var canvas = handled.GetComponentInParent<Canvas> ();
+			canvasTransform = canvas.transform as RectTransform;
+		}
+        
         // On pointer down we need to set up state to allow
         // for either a click or drag to be processed.
-        public void OnDown(PointerEventData eventData)
+		public static void OnDown(PointerEventData eventData, CardBehaviour handled)
+		{
+            if (handling != null)
+                return;
+
+			SetBehaviour (handled);
+			OnDown(eventData);
+		}
+        private static void OnDown(PointerEventData eventData)
         {
             wasDragged = false;
             eventCamera = eventData.pressEventCamera;
@@ -52,7 +61,7 @@ namespace Solitaire.Game.Objects
             leftPoints = new List<Vector3>();
             pointerOffsets = new List<Vector2>();
 
-            foreach (Transform transform in behaviour.Transforms)
+            foreach (Transform transform in handling.Transforms)
             {
                 Vector3 leftPoint;
                 Vector2 pointerOffset;
@@ -67,7 +76,7 @@ namespace Solitaire.Game.Objects
                 pointerOffsets.Add(pointerOffset);
             }
         }
-        private void HandleDown(RectTransform transform, PointerEventData eventData, out Vector3 leftPoint, out Vector2 pointerOffset)
+        private static void HandleDown(RectTransform transform, PointerEventData eventData, out Vector3 leftPoint, out Vector2 pointerOffset)
         {
             leftPoint = transform.position;
             
@@ -80,13 +89,19 @@ namespace Solitaire.Game.Objects
         // On drag event we want to move the image of the 
         // card around in  order to give the player visual 
         // feedback.
-        public void OnDrag(PointerEventData eventData)
+        public static void OnDrag(PointerEventData eventData, CardBehaviour handled)
+        {
+            if (handled == handling)
+                OnDrag(eventData);
+        }
+
+        private static void OnDrag(PointerEventData eventData)
         {
             int i = 0;
-            foreach (Transform transform in behaviour.Transforms)
+            foreach (Transform transform in handling.Transforms)
                 OnDrag(transform as RectTransform, pointerOffsets[i++], eventData);
         }
-        private void OnDrag(RectTransform transform, Vector2 pointerOffset, PointerEventData eventData)
+        private static void OnDrag(RectTransform transform, Vector2 pointerOffset, PointerEventData eventData)
         {
             if (canvasTransform == null) return;
 
@@ -112,7 +127,17 @@ namespace Solitaire.Game.Objects
 
         }
 
-        public void OnPointerUp(PointerEventData eventData)
+        public static void OnPointerUp(PointerEventData eventData, CardBehaviour handled)
+        {
+            if (handled != handling)
+                return;
+
+            OnPointerUp(eventData);
+
+            handling = null;
+        }
+
+        private static void OnPointerUp(PointerEventData eventData)
         {
             if (wasDragged)
                 HandleDragEnd(eventData);
@@ -120,29 +145,29 @@ namespace Solitaire.Game.Objects
                 HandleClick(eventData);
         }
 
-        public void HandleDragEnd(PointerEventData eventData)
+        private static void HandleDragEnd(PointerEventData eventData)
         {
             var worldPosition = CanvasPosition(eventData.position);
 
-            if (!behaviour.OnMove(worldPosition))
+            if (!handling.OnMove(worldPosition))
             {
-                var transforms = behaviour.Transforms;
+                var transforms = handling.Transforms;
 
                 for (int i = 0; i < transforms.Count; i++)
                     ResetClick(i, transforms);
             }
         }
 
-        private void HandleClick(PointerEventData eventData)
+        private static void HandleClick(PointerEventData eventData)
         {
-            var transforms = behaviour.Transforms;
+            var transforms = handling.Transforms;
 
             for (int i = 0; i < transforms.Count; i++)
                 ResetClick(i, transforms);
 
-            behaviour.OnTap(eventData);
+            handling.OnTap(eventData);
         }
-        private void ResetClick(int index, List<Transform> transforms)
+        private static void ResetClick(int index, List<Transform> transforms)
         {
             var transform = transforms[index];
 
@@ -150,7 +175,7 @@ namespace Solitaire.Game.Objects
             transform.position = leftPoints[index];
         }
 
-        Vector2 ClampToWindow(PointerEventData data)
+        private static Vector2 ClampToWindow(PointerEventData data)
         {
             Vector2 rawPointerPosition = data.position;
 
@@ -177,7 +202,7 @@ namespace Solitaire.Game.Objects
         ///     A Vector2 of the canvas-local position the corresponds to
         ///     screenPosition.
         /// </returns>
-        Vector3 CanvasPosition(Vector2 screenPosition, out bool inPlane)
+        private static Vector3 CanvasPosition(Vector2 screenPosition, out bool inPlane)
         {
             Vector3 output;
 
@@ -192,7 +217,7 @@ namespace Solitaire.Game.Objects
         }
         /// This overload simply doesn't return to bool to indicate whether
         /// the given screenPosition was within the canvas' plane.
-        Vector2 CanvasPosition(Vector2 screenPosition)
+        private static Vector2 CanvasPosition(Vector2 screenPosition)
         {
             bool inPlane;
             Vector2 canvasPosition = CanvasPosition(screenPosition, out inPlane);

@@ -19,6 +19,10 @@ namespace Solitaire.Game.Objects.Card {
         private void RefreshTransforms()
         {
             fixedPosition = GetComponentInParent<FixedPosition>();
+
+            if (transforms == null)
+                transforms = new List<Transform>();
+
             transforms.Clear();
 
             if (!acceptMouseEvents)
@@ -40,44 +44,26 @@ namespace Solitaire.Game.Objects.Card {
         }
 
         [SerializeField]
-        private MouseHandler handler;
-        [SerializeField]
         internal Card gameCard;
-
-        private Game game;
 
         // Is this object currently accepting mouse events?
         public bool acceptMouseEvents = false;
-
-        public void Awake()
-        {
-            if (transforms == null)
-                transforms = new List<Transform>();
-            
-            game = GetComponentInParent<Game>();
-            fixedPosition = GetComponentInParent<FixedPosition>();
-            Canvas canvas = GetComponentInParent<Canvas>();
-            
-
-            if (canvas != null)
-                handler = new MouseHandler(this, canvas);
-        }
 
         public void OnPointerDown(PointerEventData eventData)
         {
             RefreshTransforms();
 
-            if (handler != null) handler.OnDown(eventData);
+            MouseHandler.OnDown(eventData, this);
         }
         
         public void OnDrag(PointerEventData eventData)
         {
-            if (handler != null) handler.OnDrag(eventData);
+            MouseHandler.OnDrag(eventData, this);
         }
 
         public void OnPointerUp(PointerEventData eventData)
         {
-            if (handler != null) handler.OnPointerUp(eventData);
+            MouseHandler.OnPointerUp(eventData, this);
         }
 
         internal void SetTexture(Texture2D texture)
@@ -97,17 +83,14 @@ namespace Solitaire.Game.Objects.Card {
 
         public void OnTap(PointerEventData eventData)
         {
-            game.MoveCard(gameCard);
+            Game.Instance.MoveCard(gameCard);
         }
 
         public bool OnMove(Vector2 point)
         {
             var position = PositionRegistry.PositionAt(point);
 
-            bool valid = game.MoveCardToPosition(gameCard, position);
-
-            if (valid)
-                Destroy(gameObject);
+            bool valid = Game.Instance.MoveCardToPosition(gameCard, position);
 
             return valid;
         }

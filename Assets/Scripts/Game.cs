@@ -6,16 +6,22 @@ using Solitaire.Game.Objects.Position;
 using UnityEngine.UI;
 using System.Collections;
 using Solitaire.Game.Layout;
+using System.Collections.Generic;
 
 namespace Solitaire.Game
 {
     [Serializable]
     public class Game : MonoBehaviour
     {
+        public static Game Instance { get { return instance; } }
+        private static Game instance;
+
         // Control how the deck is dealt
         public static bool random = false;
 
         protected static int numToDeal = 3;
+
+		public CardStore cardStore;
 
 #pragma warning disable 0649
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2235:MarkAllNonSerializableFields")]
@@ -65,6 +71,10 @@ namespace Solitaire.Game
             state = new GameState();
             pauseBanner.SetActive(false);
             GamePlay.Reset();
+
+            SetScore();
+            SetTime();
+
             yield return null;
 
             if (random)
@@ -77,6 +87,8 @@ namespace Solitaire.Game
         
         public IEnumerator SetUp()
         {
+            instance = this;
+
             HoverParent = hoverParent;
 
             yield return null;
@@ -98,12 +110,17 @@ namespace Solitaire.Game
                 if (state.Won)
                     GamePlay.Stop();
 
-                timeText.text = string.Format(
-                    "{0:00}:{1:00}",
-                    GamePlay.TimePassed.Minutes,
-                    GamePlay.TimePassed.Seconds
-                );
+                SetTime();
             }
+        }
+
+        private void SetTime()
+        {
+            timeText.text = string.Format(
+                "{0:00}:{1:00}",
+                GamePlay.TimePassed.Minutes,
+                GamePlay.TimePassed.Seconds
+            );
         }
 
         private void DealCardsSolvable()
