@@ -6,16 +6,22 @@ using Solitaire.Game.Objects.Position;
 using UnityEngine.UI;
 using System.Collections;
 using Solitaire.Game.Layout;
+using System.Collections.Generic;
 
 namespace Solitaire.Game
 {
     [Serializable]
     public class Game : MonoBehaviour
     {
+        public static Game Instance { get { return instance; } }
+        private static Game instance;
+
         // Control how the deck is dealt
         public static bool random = false;
 
         protected static int numToDeal = 3;
+
+		public CardStore cardStore;
 
 #pragma warning disable 0649
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2235:MarkAllNonSerializableFields")]
@@ -51,32 +57,44 @@ namespace Solitaire.Game
 
         private IEnumerator Reset()
         {
-            foreach (var cardPosition in GetComponentsInChildren<SubCell>())
-            {
-                Destroy(cardPosition.gameObject);
-                yield return null;
-            }
-            foreach (var card in GetComponentsInChildren<CardBehaviour>())
-            {
-                Destroy(card.gameObject);
-                yield return null;
-            }
+            var cards = new List<Card>();
 
-            state = new GameState();
+            while (!cardStore.Initialised)
+                yield return null;
+
+            foreach (var info in cardStore.Cards)
+                info.MoveTo(cardStore);
+
+            yield return null;
+
+            foreach (var cardPosition in GetComponentsInChildren<SubCell>())
+                Destroy(cardPosition.gameObject);
+
+            yield return null;
+
+            state = new GameState(cardStore);
             pauseBanner.SetActive(false);
             GamePlay.Reset();
+
+            SetScore();
+            SetTime();
+
             yield return null;
 
             if (random)
                 DealCardsRandom();
             else
                 DealCardsSolvable();
-            
-            yield return RedrawAll();
+
+            yield return null;
+
+            RedrawAll();
         }
         
         public IEnumerator SetUp()
         {
+            instance = this;
+
             HoverParent = hoverParent;
 
             yield return null;
@@ -98,12 +116,17 @@ namespace Solitaire.Game
                 if (state.Won)
                     GamePlay.Stop();
 
-                timeText.text = string.Format(
-                    "{0:00}:{1:00}",
-                    GamePlay.TimePassed.Minutes,
-                    GamePlay.TimePassed.Seconds
-                );
+                SetTime();
             }
+        }
+
+        private void SetTime()
+        {
+            timeText.text = string.Format(
+                "{0:00}:{1:00}",
+                GamePlay.TimePassed.Minutes,
+                GamePlay.TimePassed.Seconds
+            );
         }
 
         private void DealCardsSolvable()
@@ -138,7 +161,7 @@ namespace Solitaire.Game
                     state.stacks[i].Add(state.shoe.Pop().Flipped());
         }
 
-        private IEnumerator ShoeCoro()
+        public void OnShoeClick()
         {
             if (state.shoe.Count == 0)
                 ResetShoe();
@@ -146,12 +169,7 @@ namespace Solitaire.Game
                 Deal();
 
             GameRendering.RedrawShoe(state.shoe);
-            yield return GameRendering.RedrawExposed(state.exposed);
-        }
-
-        public void OnShoeClick()
-        {
-            StartCoroutine(ShoeCoro());
+            GameRendering.RedrawExposed(state.exposed, cardStore);
         }
 
         public void MoveCard(Card card)
@@ -296,9 +314,9 @@ namespace Solitaire.Game
             ApplyMove(new Move.TakeFromShoe(numCards));
         }
 
-        private IEnumerator MoveCoro()
+        private void Moved()
         {
-            yield return RedrawAll();
+            RedrawAll();
             SetScore();
 
             if (!GamePlay.Running)
@@ -312,7 +330,7 @@ namespace Solitaire.Game
             state = move.Apply(state, out valid);
 
             if (valid)
-                StartCoroutine(MoveCoro());
+                Moved();
 
             return valid;
         }
@@ -323,7 +341,7 @@ namespace Solitaire.Game
                 return;
 
             state = move.Reverse(state);
-            StartCoroutine(MoveCoro());
+            Moved();
         }
         private void SetScore()
         {
@@ -342,7 +360,7 @@ namespace Solitaire.Game
 
             state = move.Reverse(state);
 
-            StartCoroutine(MoveCoro());
+            Moved();
         }
         public void Pause()
         {
@@ -354,12 +372,9 @@ namespace Solitaire.Game
 
         }
 
-        private IEnumerator RedrawAll()
+        private void RedrawAll()
         {
-            foreach (var card in hoverParent.GetComponentsInChildren<CardBehaviour>())
-                GameObject.Destroy(card.gameObject);
-
-            yield return GameRendering.RedrawAll(state);
+			GameRendering.RedrawAll(state, cardStore);
         }
     }
 }

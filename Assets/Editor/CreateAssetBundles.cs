@@ -27,13 +27,17 @@ public static class Constants
 
 public static class DirUtils
 {
+    public static void RmStreamingBundle()
+    {
+        RmContent(Application.streamingAssetsPath);
+    }
     public static void RmPlatformBundle()
     {
         RmPlatformBundle(EditorUserBuildSettings.activeBuildTarget);
     }
     public static void RmPlatformBundle(BuildTarget platform)
     {
-        RmContent(PlatformBundle(platform));
+        Rm(PlatformBundle(platform));
     }
     public static void Rm(string dirName)
     {
@@ -144,7 +148,7 @@ public class CreateAssetBundles
         {
             var group = BuildPipeline.GetBuildTargetGroup(platform);
             EditorUserBuildSettings.SwitchActiveBuildTarget(group, platform);
-            DirUtils.RmContent(Application.streamingAssetsPath);
+            DirUtils.RmStreamingBundle();
             DirUtils.Cp(directory, Application.streamingAssetsPath);
         }
     }
@@ -188,9 +192,9 @@ public class ProjectUtils
     [MenuItem("Build/Rebuild")]
     public static void BuildPlatform()
     {
+        CreateAssetBundles.EnsureBuilt();
         BuildPlatform(EditorUserBuildSettings.activeBuildTarget, Scenes);
 
-        CreateAssetBundles.EnsureBuilt();
     }
 
     [MenuItem("Build/Build Android Debug")]
@@ -250,6 +254,7 @@ public class ProjectUtils
 
         try
         {
+            DirUtils.RmStreamingBundle();
             CreateAssetBundles.EnsureBuilt(platform, setStreamingAssets:true);
             
             BuildPipeline.BuildPlayer(new BuildPlayerOptions {

@@ -63,7 +63,7 @@ namespace Solitaire.Game
             }
         }
 
-        public GameState()
+        public GameState(CardStore cardStore)
         {
             history = new List<MoveType>();
 
@@ -78,7 +78,13 @@ namespace Solitaire.Game
 
             foreach (CardValue v in Enum.GetValues(typeof(CardValue)))
                 foreach (Suit s in Enum.GetValues(typeof(Suit)))
-                    shoe.Add(new Card(s, v));
+                {
+                    var card = cardStore.Get(s, v).Card;
+                    shoe.Add(card);
+
+                    if (!card.FaceUp)
+                        card.Flip();
+                }
         }
         public GameState(GameState other)
         {
