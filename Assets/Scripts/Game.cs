@@ -10,14 +10,19 @@ using System.Collections.Generic;
 
 namespace Solitaire.Game
 {
+    public class Options
+    {
+        internal bool solvable;
+        internal bool thoughtful;
+        internal bool cheatMoveFaceDown;
+    }
+
     [Serializable]
     public class Game : MonoBehaviour
     {
         public static Game Instance { get { return instance; } }
         private static Game instance;
-
-        // Control how the deck is dealt
-        public static bool random = false;
+        internal Options options;
 
         protected static int numToDeal = 3;
 
@@ -81,18 +86,20 @@ namespace Solitaire.Game
 
             yield return null;
 
-            if (random)
-                DealCardsRandom();
-            else
+            if (options.solvable)
                 DealCardsSolvable();
+            else
+                DealCardsRandom();
 
             yield return null;
 
             RedrawAll();
         }
-        
-        public IEnumerator SetUp()
+
+        public IEnumerator SetUp(Options options)
         {
+            this.options = options;
+
             instance = this;
 
             HoverParent = hoverParent;

@@ -1,24 +1,33 @@
 ﻿using UnityEngine;
 using System;
+using UnityEngine.UI;
+using Solitaire.Game;
 
 namespace Solitaire.Intro
 {
     [Serializable]
     public class Intro : MonoBehaviour
     {
-        public void NewRandom()
+        [SerializeField]
+        private Loader loader;
+        [SerializeField]
+        private Button NewGameButton;
+        [SerializeField]
+        private Toggle Solvable;
+        [SerializeField]
+        private Toggle Thoughtful;
+        [SerializeField]
+        private Toggle MoveFaceDown;
+        
+        public void NewGame()
         {
-            NewGame(true);
-        }
-        public void NewSolvable()
-        {
-            NewGame(false);
-        }
-        private void NewGame(bool random)
-        {
-            Game.Game.random = random;
-
-            UnityEngine.SceneManagement.SceneManager.LoadScene(1);
+            var options = new Options
+            {
+                solvable = Solvable.isOn,
+                thoughtful = Thoughtful.isOn,
+                cheatMoveFaceDown = MoveFaceDown.isOn,
+            };
+            loader.LoadGame(options);
         }
     }
 }

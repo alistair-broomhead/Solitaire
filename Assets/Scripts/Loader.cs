@@ -32,24 +32,23 @@ namespace Solitaire.Game
             }
         }
 
-        private IEnumerator GameCoro(Game game)
+        private IEnumerator GameCoro(Game game, Options options)
         {
-            yield return game.SetUp();
+            yield return game.SetUp(options);
 
             gameRoot.SetActive(true);
             loaderRoot.SetActive(false);
         }
 
-        public void LoadGame(bool random)
+        public void LoadGame(Options options)
         {
             Game game = gameRoot.GetComponentInChildren<Game>();
-            Game.random = random;
-
+            
             loaderRoot.SetActive(true);
             menuRoot.SetActive(false);
             gameRoot.SetActive(false);
             
-            StartCoroutine(GameCoro(game));
+            StartCoroutine(GameCoro(game, options));
         }
 
         public void LoadMenu()
