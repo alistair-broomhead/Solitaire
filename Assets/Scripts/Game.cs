@@ -1,4 +1,4 @@
-﻿using Solitaire.Game.IListExtensions;
+﻿using Solitaire.Game.Extensions;
 using Solitaire.Game.Objects.Card;
 using UnityEngine;
 using System;

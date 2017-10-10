@@ -1,9 +1,7 @@
+using Solitaire.Game.Extensions;
 using System;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using System.Collections.Generic;
 using UnityEngine.UI;
-using Solitaire.Game.Objects.Position;
 
 namespace Solitaire.Game.Objects.Card {
 	
@@ -12,6 +10,7 @@ namespace Solitaire.Game.Objects.Card {
 	{
 		private bool initialised = false;
 
+        private GameObject cardBack;
 		[SerializeField]
 		private Card card;
 		[SerializeField]
@@ -21,18 +20,16 @@ namespace Solitaire.Game.Objects.Card {
 		[SerializeField]
 		private Texture2D back;
 
-		public Card Card {
-			get 
-			{
-				return card;
-			}
-		}
-		public CardBehaviour Behaviour {
-			get 
-			{
-				return behaviour;
-			}
-		}
+        private Color full = Color.white;
+        private Color partial = new Color(
+            Color.white.r,
+            Color.white.g,
+            Color.white.b,
+            Color.white.a * 0.75f
+        );
+
+        public Card Card { get { return card; } }
+		public CardBehaviour Behaviour { get { return behaviour; } }
 
 		public void Set(Suit suit, CardValue value)
 		{
@@ -40,19 +37,54 @@ namespace Solitaire.Game.Objects.Card {
 				throw new NotSupportedException ();
 
 			initialised = true;
+
 			card = new Card(suit, value);
-			face = TextureCache.LoadByCard(suit, value);
+
+            cardBack = new GameObject();
+            cardBack.transform.SetParent(transform);
+
+            face = TextureCache.LoadByCard(suit, value);
 			back = TextureCache.CardBack;
-			gameObject.AddComponent<RectTransform> ();
-			gameObject.AddComponent<Image> ();
-			behaviour = gameObject.AddComponent<CardBehaviour>();
-			card.Behaviour = behaviour;
-			SetTexture ();
-		}
+
+            behaviour = gameObject.GetOrAdd<CardBehaviour>();
+            behaviour.gameCard = card;
+
+            ApplyTexture(gameObject, face);
+            ApplyTexture(cardBack, back);
+
+            SetTexture();
+        }
+
+        private void ApplyTexture(GameObject obj, Texture2D texture)
+        {
+            if (obj.name == texture.name)
+                return;
+            else
+                obj.name = texture.name;
+
+            Image image = obj.GetOrAdd<Image>();
+            RectTransform rt = obj.GetOrAdd<RectTransform>();
+
+            image.sprite = Sprite.Create(
+                texture,
+                new Rect(0, 0, texture.width, texture.height),
+                (obj.transform as RectTransform).pivot
+            );
+            image.preserveAspect = true;
+        }
+
+
 
 		public void SetTexture()
 		{
-			behaviour.SetTexture(card.FaceUp ? face : back);
+            Game game = Game.Instance;
+
+            cardBack.SetActive(!card.faceUp);
+
+            if (game != null)
+                cardBack.GetComponent<Image>().color = game.options.thoughtful ? partial : full;
+
+            cardBack.SetActive(!card.faceUp);
         }
         public void MoveTo(GameObject parent)
         {

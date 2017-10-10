@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.EventSystems;
 using System.Collections.Generic;
-using UnityEngine.UI;
+using Solitaire.Game.Extensions;
 using Solitaire.Game.Objects.Position;
 
 namespace Solitaire.Game.Objects.Card {
@@ -15,6 +15,11 @@ namespace Solitaire.Game.Objects.Card {
         List<Transform> transforms;
 
         public List<Transform> Transforms { get { return transforms; } }
+
+        private void Awake()
+        {
+            gameObject.GetOrAdd<RectTransform>().sizeDelta = new Vector2(67, 100);
+        }
 
         private void RefreshTransforms()
         {
@@ -66,21 +71,6 @@ namespace Solitaire.Game.Objects.Card {
             MouseHandler.OnPointerUp(eventData, this);
         }
 
-        internal void SetTexture(Texture2D texture)
-        {
-            if (name == texture.name) return;
-
-            name = texture.name;
-            Image image = gameObject.GetComponent<Image>();
-
-            image.sprite = Sprite.Create(
-                texture,
-                new Rect(0, 0, texture.width, texture.height),
-                (gameObject.transform as RectTransform).pivot
-            );
-            image.preserveAspect = true;
-        }
-
         public void OnTap(PointerEventData eventData)
         {
             Game.Instance.MoveCard(gameCard);
@@ -93,30 +83,6 @@ namespace Solitaire.Game.Objects.Card {
             bool valid = Game.Instance.MoveCardToPosition(gameCard, position);
 
             return valid;
-        }
-
-        private RectTransform MyRectTransform
-        {
-            get
-            {
-                RectTransform rt = GetComponent<RectTransform>();
-
-                if (rt == null)
-                {
-                    gameObject.AddComponent<RectTransform>();
-                    rt = GetComponent<RectTransform>();
-                }
-
-                return rt;
-            }
-        }
-
-        public void SetParent(GameObject parent)
-        {
-
-            transform.SetParent(parent.transform, false);
-
-            MyRectTransform.sizeDelta = new Vector2(67, 100);
         }
     }
 }

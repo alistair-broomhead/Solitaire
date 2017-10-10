@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Solitaire.Game.IListExtensions
+namespace Solitaire.Game.Extensions
 {
+
     public static class IListExtensions
     {
         public static void Shuffle<T>(this IList<T> list)

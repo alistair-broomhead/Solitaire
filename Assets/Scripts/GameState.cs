@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System;
 using Solitaire.Game.Move;
-using Solitaire.Game.IListExtensions;
+using Solitaire.Game.Extensions;
 
 namespace Solitaire.Game
 {
@@ -78,14 +78,17 @@ namespace Solitaire.Game
 
             foreach (CardValue v in Enum.GetValues(typeof(CardValue)))
                 foreach (Suit s in Enum.GetValues(typeof(Suit)))
-                {
-                    var card = cardStore.Get(s, v).Card;
-                    shoe.Add(card);
-
-                    if (!card.FaceUp)
-                        card.Flip();
-                }
+                    shoe.Add(FaceUpCard(cardStore, s, v));
         }
+        private Card FaceUpCard(CardStore cardStore, Suit suit, CardValue value)
+        {
+            var card = cardStore.Get(suit, value).Card;
+
+            card.faceUp = true;
+
+            return card;
+        }
+
         public GameState(GameState other)
         {
             history = other.history.Copy();

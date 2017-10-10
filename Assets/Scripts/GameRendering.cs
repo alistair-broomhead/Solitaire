@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System;
 using UnityEngine.UI;
 using System.Collections;
-using Solitaire.Game.IListExtensions;
+using Solitaire.Game.Extensions;
 
 namespace Solitaire.Game
 {
@@ -95,7 +95,7 @@ namespace Solitaire.Game
                     var info = cardStore.Get(card);
 
                     info.MoveTo(positionsInStack[j].transform);
-                    info.Behaviour.acceptMouseEvents = card.FaceUp;
+                    info.Behaviour.acceptMouseEvents = card.faceUp;
                 }
             }
         }

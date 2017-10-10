@@ -43,42 +43,17 @@ namespace Solitaire.Game.Objects.Card
         {
             get { return val; }
         }
-        public CardBehaviour Behaviour
-        {
-            get {
-                return behaviour;
-            }
-            set
-            {
-                behaviour = value;
-                behaviour.gameCard = this;
-                SetTexture();
-            }
-        }
-        [SerializeField]
-        private bool faceUp = true;
-
-        internal bool FaceUp { get { return faceUp;  } }
+        public bool faceUp = true;
 
         public void Flip()
         {
             faceUp = !faceUp;
-            SetTexture();
         }
 
         public Card Flipped()
         {
             Flip();
             return this;
-        }
-
-        private void SetTexture()
-        {
-            if (behaviour == null) return;
-
-            var texture = faceUp ? TextureCache.LoadByCard(suit, val) : TextureCache.CardBack;
-
-            behaviour.SetTexture(texture);
         }
 
         public Card(Suit cardSuit, CardValue cardValue)

@@ -1,4 +1,4 @@
-﻿using Solitaire.Game.IListExtensions;
+﻿using Solitaire.Game.Extensions;
 using Solitaire.Game.Objects.Card;
 using System;
 using System.Collections.Generic;
@@ -24,7 +24,7 @@ namespace Solitaire.Game.Move
         {
             if (uncovered == null)
                 return false;
-            else if (!uncovered.FaceUp)
+            else if (!uncovered.faceUp)
                 return uncovered.Flipped() is Card;
             else
                 return false;
