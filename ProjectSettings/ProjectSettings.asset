@@ -121,7 +121,7 @@ PlayerSettings:
     16:10: 1
     16:9: 1
     Others: 1
-  bundleVersion: 0.1.8
+  bundleVersion: 0.2
   preloadedAssets: []
   metroInputSource: 0
   m_HolographicPauseOnTrackingLoss: 1
@@ -143,8 +143,8 @@ PlayerSettings:
   applicationIdentifier:
     Android: com.theheadofabroom.Solitaire.Debug
   buildNumber: {}
-  AndroidBundleVersionCode: 23
-  AndroidMinSdkVersion: 23
+  AndroidBundleVersionCode: 24
+  AndroidMinSdkVersion: 21
   AndroidTargetSdkVersion: 0
   AndroidPreferredInstallLocation: 1
   aotOptions: 

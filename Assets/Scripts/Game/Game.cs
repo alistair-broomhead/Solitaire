@@ -15,6 +15,7 @@ namespace Solitaire.Game
         internal bool solvable;
         internal bool thoughtful;
         internal bool cheatMoveFaceDown;
+        internal bool autoSort;
     }
 
     [Serializable]
@@ -29,6 +30,9 @@ namespace Solitaire.Game
 		public CardStore cardStore;
 
 #pragma warning disable 0649
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2235:MarkAllNonSerializableFields")]
+        [SerializeField]
+        private Button sortButton;
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2235:MarkAllNonSerializableFields")]
         [SerializeField]
         private GameObject pauseBanner;
@@ -301,13 +305,52 @@ namespace Solitaire.Game
                 for (int j = 0; j < state.foundation[i].Count; j++)
                     cardStore.Get(state.foundation[i][j]).SetFoundation(i, j);
         }
-
+        
         private void Moved()
         {
             Refresh();
 
             if (!GamePlay.Running)
                 GamePlay.Start();
+
+            if (state.Sortable)
+                if (options.autoSort)
+                    SortAll();
+                else
+                    sortButton.gameObject.SetActive(true);
+        }
+
+        private bool sorting = false;
+
+        public void SortAll()
+        {
+            // Avoid recursively calling ourself
+            if (sorting)
+                return;
+
+            StartCoroutine(SortCoro());
+
+        }
+
+        private IEnumerator SortCoro()
+        {
+            sorting = true;
+
+            while (!state.Won)
+            {
+                yield return new WaitForSecondsRealtime(0.05f);
+                SortOne(state);
+            }
+
+            sorting = false;
+            sortButton.gameObject.SetActive(false);
+        }
+        private void SortOne(GameState s)
+        {
+            for (int stack = 0; stack < s.tableau.Length; stack++)
+                for (int suit = 0; suit < s.foundation.Length; suit++)
+                    if (ApplyMove(new Move.MoveTableauToFoundation(stack, suit)))
+                        return;
         }
 
         private bool ApplyMove(Move.MoveType move)

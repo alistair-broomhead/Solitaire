@@ -42,6 +42,22 @@ namespace Solitaire.Game
                 return score;
             }
         }
+        
+        public bool Sortable
+        {
+            get
+            {
+                if (wasteExposed.Count + wasteShoe.Count > 0)
+                    return false;
+
+                foreach (var stack in tableau)
+                    foreach (var card in stack)
+                        if (!card.faceUp)
+                            return false;
+
+                return true;
+            }
+        }
 
         public bool Won
         {

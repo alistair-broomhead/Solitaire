@@ -60,6 +60,8 @@ namespace Solitaire.Menu
         [SerializeField]
         private Toggle OrderedDeck;
         [SerializeField]
+        private Toggle AutoSort;
+        [SerializeField]
         private Toggle Thoughtful;
         [SerializeField]
         private Toggle MoveFaceDown;
@@ -70,8 +72,9 @@ namespace Solitaire.Menu
             {
                 return new Options
                 {
-                    solvable = OrderedDeck.isOn,
                     thoughtful = Thoughtful.isOn,
+                    autoSort = AutoSort.isOn,
+                    solvable = OrderedDeck.isOn,
                     cheatMoveFaceDown = MoveFaceDown.isOn,
                 };
             }
