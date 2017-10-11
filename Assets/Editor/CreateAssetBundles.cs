@@ -9,7 +9,7 @@ public static class Constants
     public readonly static string BuildPath = "Builds";
     public readonly static BuildTarget[] platforms = new BuildTarget[] {
         BuildTarget.Android,
-        BuildTarget.StandaloneWindows64,
+        // BuildTarget.StandaloneWindows64,
         // BuildTarget.WebGL,
         // BuildTarget.StandaloneOSXIntel64,
         // BuildTarget.StandaloneLinux64,
@@ -180,8 +180,8 @@ public class ProjectUtils
         foreach (var platform in Constants.platforms)
             if (platform == BuildTarget.Android)
             {
-                BuildAndroidDebug();
                 BuildAndroidRelease();
+                BuildAndroidDebug();
             }
             else
                 BuildPlatform(platform, scenes);
@@ -254,9 +254,9 @@ public class ProjectUtils
 
         try
         {
-            DirUtils.RmStreamingBundle();
-            CreateAssetBundles.EnsureBuilt(platform, setStreamingAssets:true);
-            
+            // DirUtils.RmStreamingBundle();
+            // CreateAssetBundles.EnsureBuilt(platform, setStreamingAssets:true);
+
             BuildPipeline.BuildPlayer(new BuildPlayerOptions {
                 target = platform,
                 scenes = scenes,
