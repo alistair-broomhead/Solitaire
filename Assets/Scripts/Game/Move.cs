@@ -6,30 +6,24 @@ using UnityEngine;
 
 namespace Solitaire.Game.Move
 {
-    public interface IFaceDownable
+    internal static class MoveExtensions
     {
-        bool FromFaceDown { get; }
-        void OnApplyUncover(Card uncovered);
-        void OnReverseUncover(Card covered);
-    }
-    public interface INotFaceDownable
-    {
-        void OnApplyUncover(Card uncovered);
-        void OnReverseUncover(Card covered);
-    }
-
-    internal static class FaceDownable
-    {
-        public static bool FlipUncovered(Card uncovered)
+        public static bool FlipUncovered(this IFaceDownable move, Card uncovered)
         {
             if (uncovered == null)
                 return false;
             else if (!uncovered.faceUp)
-                return uncovered.Flipped() is Card;
+                return Flip(move, uncovered);
             else
                 return false;
         }
-        public static void FlipCovered(Card covered, IFaceDownable move)
+        private static bool Flip(IFaceDownable move, Card uncovered)
+        {
+            uncovered.Flip();
+            move.FromFaceDown = true;
+            return true;
+        }
+        public static void FlipCovered(this IFaceDownable move, Card covered)
         {
             if (covered == null)
                 return;
@@ -38,12 +32,24 @@ namespace Solitaire.Game.Move
         }
     }
 
-    [Serializable]
-    public abstract class MoveType
+    public interface IFaceDownable
     {
-        public virtual bool FromFaceDown {
-            get { return false; }
-        }
+        bool FromFaceDown { get; set; }
+        void OnApplyUncover(Card uncovered);
+        void OnReverseUncover(Card covered);
+    }
+    public interface IMoveType
+    {
+        bool FromFaceDown { get; set; }
+        void OnApplyUncover(Card uncovered);
+        void OnReverseUncover(Card covered);
+    }
+
+    [Serializable]
+    public abstract class MoveType : IMoveType
+    {
+        public abstract bool FromFaceDown { get; set;  }
+
         protected abstract List<Card> FromCards(GameState state);
         protected abstract List<Card> ToCards(GameState state);
 
@@ -109,26 +115,33 @@ namespace Solitaire.Game.Move
             return newState;
         }
     }
-    
+
+    public abstract class NotFaceDownable : MoveType
+    {
+        public override bool FromFaceDown { get { return false; } set { } }
+        public override void OnApplyUncover(Card uncovered) { }
+        public override void OnReverseUncover(Card covered) { }
+    }
+
     [Serializable]
-    public class TakeFromShoe : MoveType
+    public class RevealWaste : NotFaceDownable
     {
         [SerializeField]
         private int numCards;
 
         public override bool Valid(GameState initial)
         {
-            return numCards <= initial.shoe.Count;
+            return numCards <= initial.wasteShoe.Count;
         }
         
         protected override List<Card> FromCards(GameState state)
         {
-            return state.shoe;
+            return state.wasteShoe;
         }
 
         protected override List<Card> ToCards(GameState state)
         {
-            return state.exposed;
+            return state.wasteExposed;
         }
         protected override GameState Apply(GameState initial)
         {
@@ -157,28 +170,28 @@ namespace Solitaire.Game.Move
             return newState;
         }
 
-        public TakeFromShoe(int cards)
+        public RevealWaste(int cards)
         {
             numCards = cards;
         }
     }
 
     [Serializable]
-    public class ResetShoe : MoveType
+    public class ResetWaste : NotFaceDownable
     {
         public override bool Valid(GameState initial)
         {
             return (
-                initial.shoe.Count == 0 &&
-                initial.exposed.Count > 0
+                initial.wasteShoe.Count == 0 &&
+                initial.wasteExposed.Count > 0
             );
         }
         protected override GameState Apply(GameState initial)
         {
             var newState = new GameState(initial);
 
-            while (newState.exposed.Count > 0)
-                newState.shoe.Add(newState.exposed.Pop());
+            while (newState.wasteExposed.Count > 0)
+                newState.wasteShoe.Add(newState.wasteExposed.Pop());
 
             newState.history.Add(this);
 
@@ -190,24 +203,24 @@ namespace Solitaire.Game.Move
 
             RemoveFromHistory(newState);
 
-            while (newState.shoe.Count > 0)
-                newState.exposed.Add(newState.shoe.Pop());
+            while (newState.wasteShoe.Count > 0)
+                newState.wasteExposed.Add(newState.wasteShoe.Pop());
 
             return newState;
         }
 
         protected override List<Card> FromCards(GameState state)
         {
-            return state.exposed;
+            return state.wasteExposed;
         }
 
         protected override List<Card> ToCards(GameState state)
         {
-            return state.shoe;
+            return state.wasteShoe;
         }
     }
 
-    public abstract class SortCard : MoveType
+    public abstract class ToFoundation : MoveType
     {
         protected int sorted;
 
@@ -239,31 +252,39 @@ namespace Solitaire.Game.Move
 
         protected override List<Card> ToCards(GameState state)
         {
-            return state.sorted[sorted];
+            return state.foundation[sorted];
         }
     }
 
+    public abstract class FaceDownableCardToFoundation : ToFoundation, IFaceDownable
+    {
+        public override bool FromFaceDown { get; set; }
+    }
+    public abstract class NotFaceDownableCardToFoundation : ToFoundation
+    {
+        public override bool FromFaceDown { get {return false; } set { } }
+    }
+
     [Serializable]
-    public class SortCardFromStack : SortCard, IFaceDownable
+    public class MoveTableauToFoundation : FaceDownableCardToFoundation
     {
         private int stack;
-        public new bool FromFaceDown { get; private set; }
 
         protected override List<Card> FromCards(GameState state)
         {
-            return state.stacks[stack];
+            return state.tableau[stack];
         }
 
         public override void OnApplyUncover(Card uncovered)
         {
-            FromFaceDown = FaceDownable.FlipUncovered(uncovered);
+            FromFaceDown = this.FlipUncovered(uncovered);
         }
         public override void OnReverseUncover(Card uncovered)
         {
-            FaceDownable.FlipCovered(uncovered, this);
+            this.FlipCovered(uncovered);
         }
         
-        public SortCardFromStack(int fromStackIndex, int toSortedIndex)
+        public MoveTableauToFoundation(int fromStackIndex, int toSortedIndex)
         {
             stack = fromStackIndex;
             sorted = toSortedIndex;
@@ -271,21 +292,21 @@ namespace Solitaire.Game.Move
     }
 
     [Serializable]
-    public class SortCardFromExposed : SortCard
+    public class MoveWasteToFoundation : NotFaceDownableCardToFoundation
     {
 
         protected override List<Card> FromCards(GameState state)
         {
-            return state.exposed;
+            return state.wasteExposed;
         }
-        
-        public SortCardFromExposed(int toSortedIndex)
+
+        public MoveWasteToFoundation(int toSortedIndex)
         {
             sorted = toSortedIndex;
         }
     }
 
-    public abstract class StackCard : MoveType
+    public abstract class CardToTableau : MoveType
     {
         internal enum Colour: sbyte
         {
@@ -303,7 +324,7 @@ namespace Solitaire.Game.Move
 
         protected override List<Card> ToCards(GameState state)
         {
-            return state.stacks[toStack];
+            return state.tableau[toStack];
         }
 
         public override bool Valid(GameState initial)
@@ -313,7 +334,7 @@ namespace Solitaire.Game.Move
             if (card == null)
                 return false;
 
-            var topCard = initial.stacks[toStack].Last();
+            var topCard = initial.tableau[toStack].Last();
 
             if (card.Value == CardValue.King)
                 return topCard == null;
@@ -329,27 +350,35 @@ namespace Solitaire.Game.Move
             return valueDiff == 1;
         }
     }
+    public abstract class NotFaceDownableToTableau : CardToTableau
+    {
+        public override bool FromFaceDown { get { return false; } set { } }
+    }
+    public abstract class FaceDownableToTableau : CardToTableau, IFaceDownable
+    {
+        public override bool FromFaceDown { get; set; }
+    }
 
     [Serializable]
-    public class StackCardFromExposed : StackCard
+    public class MoveWasteToTableau : NotFaceDownableToTableau
     {
-        public StackCardFromExposed(int toStackIndex)
+        public MoveWasteToTableau(int toStackIndex)
         {
             toStack = toStackIndex;
         }
 
         protected override List<Card> FromCards(GameState state)
         {
-            return state.exposed;
+            return state.wasteExposed;
         }
     }
 
     [Serializable]
-    public class StackCardFromSorted : StackCard
+    public class MoveFoundationToTableau : NotFaceDownableToTableau
     {
         private int fromSorted;
 
-        public StackCardFromSorted(int fromSortedIndex, int toStackIndex)
+        public MoveFoundationToTableau(int fromSortedIndex, int toStackIndex)
         {
             fromSorted = fromSortedIndex;
             toStack = toStackIndex;
@@ -357,17 +386,17 @@ namespace Solitaire.Game.Move
 
         protected override List<Card> FromCards(GameState state)
         {
-            return state.sorted[fromSorted];
+            return state.foundation[fromSorted];
         }
     }
 
     [Serializable]
-    public class StackCardFromStack : StackCard, IFaceDownable
+    public class MoveTableauCardToTableau : FaceDownableToTableau
     {
         private int fromStack;
-        public new bool FromFaceDown { get; protected set; }
+        public new bool FromFaceDown { get; set; }
 
-        public StackCardFromStack(int fromStackIndex, int toStackIndex)
+        public MoveTableauCardToTableau(int fromStackIndex, int toStackIndex)
         {
             fromStack = fromStackIndex;
             toStack = toStackIndex;
@@ -375,29 +404,29 @@ namespace Solitaire.Game.Move
 
         public override void OnApplyUncover(Card uncovered)
         {
-            FromFaceDown = FaceDownable.FlipUncovered(uncovered);
+            FromFaceDown = this.FlipUncovered(uncovered);
         }
         public override void OnReverseUncover(Card uncovered)
         {
-            FaceDownable.FlipCovered(uncovered, this);
+            this.FlipCovered(uncovered);
         }
 
         protected override List<Card> FromCards(GameState state)
         {
-            return state.stacks[fromStack];
+            return state.tableau[fromStack];
         }
     }
 
     [Serializable]
-    public class MoveStack : MoveType, IFaceDownable
+    public class MoveTableauStackToTableau : FaceDownableToTableau
     {
-        public new bool FromFaceDown { get; protected set; }
+        public new bool FromFaceDown { get; set; }
         int fromStack;
         int fromIndex;
         int toStack;
         int toIndex;
 
-        public MoveStack(int fromStackIndex, int fromStackContentIndex, int toStackIndex)
+        public MoveTableauStackToTableau(int fromStackIndex, int fromStackContentIndex, int toStackIndex)
         {
             fromStack = fromStackIndex;
             fromIndex = fromStackContentIndex;
@@ -411,7 +440,7 @@ namespace Solitaire.Game.Move
             if (card == null)
                 return false;
 
-            var topCard = initial.stacks[toStack].Last();
+            var topCard = initial.tableau[toStack].Last();
 
             if (card.Value == CardValue.King)
                 return topCard == null;
@@ -419,7 +448,7 @@ namespace Solitaire.Game.Move
             if (topCard == null)
                 return false;
 
-            if (StackCard.suitColour[card.Suit] == StackCard.suitColour[topCard.Suit])
+            if (CardToTableau.suitColour[card.Suit] == CardToTableau.suitColour[topCard.Suit])
                 return false;
 
             int valueDiff = (int)topCard.Value - (int)card.Value;
@@ -429,12 +458,12 @@ namespace Solitaire.Game.Move
 
         protected override List<Card> FromCards(GameState state)
         {
-            return state.stacks[fromStack];
+            return state.tableau[fromStack];
         }
 
         protected override List<Card> ToCards(GameState state)
         {
-            return state.stacks[toStack];
+            return state.tableau[toStack];
         }
 
         protected override GameState Apply(GameState initial)
@@ -482,11 +511,11 @@ namespace Solitaire.Game.Move
 
         public override void OnApplyUncover(Card uncovered)
         {
-            FromFaceDown = FaceDownable.FlipUncovered(uncovered);
+            FromFaceDown = this.FlipUncovered(uncovered);
         }
         public override void OnReverseUncover(Card uncovered)
         {
-            FaceDownable.FlipCovered(uncovered, this);
+            this.FlipCovered(uncovered);
         }
     }
 }

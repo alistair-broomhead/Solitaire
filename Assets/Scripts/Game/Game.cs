@@ -93,7 +93,7 @@ namespace Solitaire.Game
 
             yield return null;
 
-            RedrawAll();
+            Refresh();
         }
 
         public IEnumerator SetUp(Options options)
@@ -142,10 +142,10 @@ namespace Solitaire.Game
             // deck from reversed valid moves from the
             // solution, for now just give all the cards 
             // in order
-            state.shoe.Reverse();
+            state.wasteShoe.Reverse();
             DealCards();
 
-            foreach (var stack in state.stacks)
+            foreach (var stack in state.tableau)
             {
                 stack.Reverse();
                 stack.Last().Flip();
@@ -154,46 +154,39 @@ namespace Solitaire.Game
 
         private void DealCardsRandom()
         {
-            state.shoe.Shuffle();
+            state.wasteShoe.Shuffle();
             DealCards();
 
-            foreach (var stack in state.stacks)
+            foreach (var stack in state.tableau)
                 stack.Last().Flip();
         }
 
         private void DealCards()
         {
-            for (int i = 0; i < state.stacks.Length; i++)
+            for (int i = 0; i < state.tableau.Length; i++)
                 for (int j = i; j >= 0; j--)
-                    state.stacks[i].Add(state.shoe.Pop().Flipped());
+                    state.tableau[i].Add(state.wasteShoe.Pop().Flipped());
         }
 
         public void OnShoeClick()
         {
-            if (state.shoe.Count == 0)
+            if (state.wasteShoe.Count == 0)
                 ResetShoe();
             else
                 Deal();
 
-            GameRendering.RedrawShoe(state.shoe);
-            GameRendering.RedrawExposed(state.exposed, cardStore);
+            GameRendering.RedrawShoe(state.wasteShoe);
+            GameRendering.RedrawExposed(state.wasteExposed, cardStore);
         }
 
         public void MoveCard(Card card)
         {
-            // Find where the card is
-            int fromStack;
-            int fromStackIndex;
-            int fromSorted;
-            bool fromExposed;
-            FindCurrentCardPosition(card, out fromExposed, out fromStack, out fromStackIndex, out fromSorted);
-
-            for (int toSorted = 0; toSorted < state.sorted.Length; toSorted++)
-                if (MoveCardToSorted(toSorted, fromExposed, fromStack, fromStackIndex))
+            for (int toSorted = 0; toSorted < state.foundation.Length; toSorted++)
+                if (MoveCardToSorted(card, toSorted))
                     return;
 
-            for (int toStack = 0; toStack < state.stacks.Length; toStack++)
-                if (MoveCardToStack(toStack, fromExposed, fromStack, fromStackIndex, fromSorted))
+            for (int toStack = 0; toStack < state.tableau.Length; toStack++)
+                if (MoveCardToStack(card, toStack))
                     return;
         }
 
@@ -217,82 +210,51 @@ namespace Solitaire.Game
 
         private bool MoveCardToStack(Card card, int toStack)
         {
-            //Find where the card is
-            int fromStack;
-            int fromStackIndex;
-            int fromSorted;
-            bool fromExposed;
-            FindCurrentCardPosition(card, out fromExposed, out fromStack, out fromStackIndex, out fromSorted);
+            var info = cardStore.Get(card);
+            int index = info.cardPositionIndex;
+            int sub = info.cardPositionSubIndex;
 
-            return MoveCardToStack(toStack, fromExposed, fromStack, fromStackIndex, fromSorted);
+            Move.MoveType move = null;
+            
+            if (info.cardPosition == CardPosition.Waste)
+                move = new Move.MoveWasteToTableau(toStack);
+            else if (info.cardPosition == CardPosition.Tableau)
+            {
+                if (state.tableau[index].Count - 1 == sub)
+                    move = new Move.MoveTableauCardToTableau(index, toStack);
+                else
+                    move = new Move.MoveTableauStackToTableau(index, sub, toStack);
+            }
+            else if (info.cardPosition == CardPosition.Foundation)
+            {
+                if (state.foundation[index].Count - 1 == sub)
+                    move = new Move.MoveFoundationToTableau(index, toStack);
+            }
+            if (move == null)
+                return false;
+            else
+                return ApplyMove(move);
         }
 
-        private bool MoveCardToStack(int toStack, bool fromExposed, int fromStack, int fromStackIndex, int fromSorted)
+        private bool MoveCardToSorted(Card card, int toTableau)
         {
-            if (fromExposed)
-                return ApplyMove(new Move.StackCardFromExposed(toStack));
-            else if (fromStack >= 0)
-                return ApplyMove(new Move.MoveStack(fromStack, fromStackIndex, toStack));
-            else if (fromSorted >= 0)
-                return ApplyMove(new Move.StackCardFromSorted(fromSorted, toStack));
+            var info = cardStore.Get(card);
+
+            if (info.cardPosition == CardPosition.Waste)
+                return ApplyMove(new Move.MoveWasteToFoundation(toTableau));
+
+            if (info.cardPosition == CardPosition.Tableau)
+            {
+                int index = info.cardPositionIndex;
+                int subIndex = info.cardPositionSubIndex;
+
+                if (subIndex + 1 == state.tableau[index].Count)
+                    return ApplyMove(new Move.MoveTableauToFoundation(index, toTableau));
+            }
 
             return false;
         }
-
-        private bool MoveCardToSorted(Card card, int toSorted)
-        {
-            // Find where the card is
-            int fromStack;
-            int fromStackIndex;
-            int fromSorted;
-            bool fromExposed;
-            FindCurrentCardPosition(card, out fromExposed, out fromStack, out fromStackIndex, out fromSorted);
-
-            return MoveCardToSorted(toSorted, fromExposed, fromStack, fromStackIndex);
-        }
-
-        private bool MoveCardToSorted(int toSorted, bool fromExposed, int fromStack, int fromStackIndex)
-        {
-            if (fromStack >= 0)
-                if (fromStackIndex != state.stacks[fromStack].Count - 1)
-                    return false;
-            if (fromExposed)
-                return ApplyMove(new Move.SortCardFromExposed(toSorted));
-            else if (fromStack >= 0)
-                return (
-                    (fromStackIndex + 1 == state.stacks[fromStack].Count) &&
-                    ApplyMove(new Move.SortCardFromStack(fromStack, toSorted))
-                );
-
-            return false;
-        }
-
-        private void FindCurrentCardPosition(Card card, out bool fromExposed, out int fromStack, out int fromStackIndex, out int fromSorted)
-        {
-            fromStackIndex = -1;
-            fromStack = -1;
-            fromSorted = -1;
-
-            fromExposed = state.exposed.Last() == card;
-
-            if (fromExposed)
-                return;
-
-            for (fromStack = 0; fromStack < state.stacks.Length; fromStack++)
-                for (fromStackIndex = 0; fromStackIndex < state.stacks[fromStack].Count; fromStackIndex++)
-                    if (state.stacks[fromStack][fromStackIndex] == card)
-                        return;
-
-            fromStack = -1;
-            fromStackIndex = -1;
-
-            for (fromSorted = 0; fromSorted < state.sorted.Length; fromSorted++)
-                if (state.sorted[fromSorted].Last() == card)
-                    return;
-
-            fromSorted = -1;
-        }
-
+        
         private void FindPosition(Position position, out int stack, out int sorted)
         {
             stack = -1;
@@ -312,19 +274,37 @@ namespace Solitaire.Game
 
         private void ResetShoe()
         {
-            ApplyMove(new Move.ResetShoe());
+            ApplyMove(new Move.ResetWaste());
         }
 
         private void Deal()
         {
-            int numCards = Math.Min(state.shoe.Count, numToDeal);
-            ApplyMove(new Move.TakeFromShoe(numCards));
+            int numCards = Math.Min(state.wasteShoe.Count, numToDeal);
+            ApplyMove(new Move.RevealWaste(numCards));
+        }
+
+        private void Refresh() {
+            RedrawAll();
+            SetScore();
+
+            foreach (var card in state.wasteExposed)
+                cardStore.Get(card).SetWaste();
+
+            foreach (var card in state.wasteShoe)
+                cardStore.Get(card).SetWaste();
+
+            for (int i = 0; i < state.tableau.Length; i++)
+                for (int j = 0; j < state.tableau[i].Count; j++)
+                    cardStore.Get(state.tableau[i][j]).SetTableau(i, j);
+
+            for (int i = 0; i < state.foundation.Length; i++)
+                for (int j = 0; j < state.foundation[i].Count; j++)
+                    cardStore.Get(state.foundation[i][j]).SetFoundation(i, j);
         }
 
         private void Moved()
         {
-            RedrawAll();
-            SetScore();
+            Refresh();
 
             if (!GamePlay.Running)
                 GamePlay.Start();
@@ -373,10 +353,6 @@ namespace Solitaire.Game
         {
             pauseBanner.SetActive(GamePlay.Running);
             GamePlay.PauseOrResume();
-        }
-        public void Stop()
-        {
-
         }
 
         private void RedrawAll()

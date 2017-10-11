@@ -31,10 +31,10 @@ namespace Solitaire.Game
             foreach (CardInfo info in cardStore.Cards)
                 info.MoveTo(cardStore.transform);
 
-            RedrawShoe(state.shoe);
-			RedrawExposed(state.exposed, cardStore);
-			RedrawStacks(state.stacks, cardStore);
-			RedrawSorted(state.sorted, cardStore);
+            RedrawShoe(state.wasteShoe);
+			RedrawExposed(state.wasteExposed, cardStore);
+			RedrawStacks(state.tableau, cardStore);
+			RedrawSorted(state.foundation, cardStore);
             
             foreach (CardInfo info in cardStore.Cards)
                 info.SetTexture();

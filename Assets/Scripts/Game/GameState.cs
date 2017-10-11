@@ -9,11 +9,11 @@ namespace Solitaire.Game
     [Serializable]
     public class GameState
     {
-        public List<Card> shoe;
-        public List<Card> exposed;
+        public List<Card> wasteShoe;
+        public List<Card> wasteExposed;
 
-        public List<Card>[] stacks = new List<Card>[7];
-        public List<Card>[] sorted = new List<Card>[4];
+        public List<Card>[] tableau = new List<Card>[7];
+        public List<Card>[] foundation = new List<Card>[4];
 
         public List<MoveType> history;
 
@@ -26,17 +26,16 @@ namespace Solitaire.Game
                 foreach (var move in history)
                 {
                     if (
-                        (move is SortCardFromExposed) ||
-                        (move is SortCardFromStack)
+                        (move is MoveWasteToFoundation) ||
+                        (move is MoveTableauToFoundation)
                     )
                         score += 10;
-                    else if (move is StackCardFromExposed)
+                    else if (move is MoveWasteToTableau)
                         score += 5;
-                    else if (move is StackCardFromSorted)
+                    else if (move is MoveFoundationToTableau)
                         score -= 15;
-                    if (
-                        (move is IFaceDownable) && move.FromFaceDown
-                    )
+
+                    if (move.FromFaceDown)
                         score += 5;
                 }
 
@@ -49,14 +48,14 @@ namespace Solitaire.Game
             get
             {
                 int Sorted = 0;
-                int toSort = shoe.Count;
+                int toSort = wasteShoe.Count;
 
-                toSort += exposed.Count;
+                toSort += wasteExposed.Count;
 
-                foreach (var stack in stacks)
+                foreach (var stack in tableau)
                     toSort += stack.Count;
 
-                foreach (var stack in sorted)
+                foreach (var stack in foundation)
                     Sorted += stack.Count;
 
                 return (toSort == 0) && (Sorted == 52);
@@ -67,18 +66,18 @@ namespace Solitaire.Game
         {
             history = new List<MoveType>();
 
-            shoe = new List<Card>();
-            exposed = new List<Card>();
+            wasteShoe = new List<Card>();
+            wasteExposed = new List<Card>();
 
-            for (int i = 0; i < sorted.Length; i++)
-                sorted[i] = new List<Card>();
+            for (int i = 0; i < foundation.Length; i++)
+                foundation[i] = new List<Card>();
 
-            for (int i = 0; i < stacks.Length; i++)
-                stacks[i] = new List<Card>();
+            for (int i = 0; i < tableau.Length; i++)
+                tableau[i] = new List<Card>();
 
             foreach (CardValue v in Enum.GetValues(typeof(CardValue)))
                 foreach (Suit s in Enum.GetValues(typeof(Suit)))
-                    shoe.Add(FaceUpCard(cardStore, s, v));
+                    wasteShoe.Add(FaceUpCard(cardStore, s, v));
         }
         private Card FaceUpCard(CardStore cardStore, Suit suit, CardValue value)
         {
@@ -92,14 +91,14 @@ namespace Solitaire.Game
         public GameState(GameState other)
         {
             history = other.history.Copy();
-            shoe = other.shoe.Copy();
-            exposed = other.exposed.Copy();
+            wasteShoe = other.wasteShoe.Copy();
+            wasteExposed = other.wasteExposed.Copy();
 
-            for (int i = 0; i < sorted.Length; i++)
-                sorted[i] = other.sorted[i].Copy();
+            for (int i = 0; i < foundation.Length; i++)
+                foundation[i] = other.foundation[i].Copy();
 
-            for (int i = 0; i < stacks.Length; i++)
-                stacks[i] = other.stacks[i].Copy();
+            for (int i = 0; i < tableau.Length; i++)
+                tableau[i] = other.tableau[i].Copy();
         }
     }
 }

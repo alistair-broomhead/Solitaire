@@ -4,11 +4,40 @@ using UnityEngine;
 using UnityEngine.UI;
 
 namespace Solitaire.Game.Objects.Card {
+    public enum CardPosition: sbyte
+    {
+        Waste,
+        Tableau,
+        Foundation
+    }
 	
 	[Serializable]
 	public class CardInfo : MonoBehaviour
 	{
-		private bool initialised = false;
+        public CardPosition cardPosition;
+        public int cardPositionIndex;
+        public int cardPositionSubIndex;
+
+        public void SetWaste()
+        {
+            cardPosition = CardPosition.Waste;
+            cardPositionIndex = -1;
+            cardPositionSubIndex = -1;
+        }
+        public void SetFoundation(int idx, int sub)
+        {
+            cardPosition = CardPosition.Foundation;
+            cardPositionIndex = idx;
+            cardPositionSubIndex = sub;
+        }
+        public void SetTableau(int idx, int sub)
+        {
+            cardPosition = CardPosition.Tableau;
+            cardPositionIndex = idx;
+            cardPositionSubIndex = sub;
+        }
+
+        private bool initialised = false;
 
         private GameObject cardBack;
 		[SerializeField]
