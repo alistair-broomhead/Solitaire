@@ -32,6 +32,7 @@ namespace Solitaire.Menu
             }
         }
         private bool cheatsEnabled;
+        private MenuHandle menuHandle;
         private void SetCheats()
         {
             foreach (var toggle in new Toggle[] {
@@ -42,6 +43,11 @@ namespace Solitaire.Menu
                 toggle.isOn &= cheatsEnabled;
                 toggle.gameObject.SetActive(cheatsEnabled);
             }
+
+            if (menuHandle == null)
+                menuHandle = GetComponentInChildren<MenuHandle>();
+
+            StartCoroutine(menuHandle.MoveNextFrame());
         }
 
         private void Awake()

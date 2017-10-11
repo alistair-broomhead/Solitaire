@@ -2,11 +2,13 @@
 using UnityEngine.EventSystems;
 using System;
 using Solitaire.Game.Layout;
+using Solitaire.Game.Extensions;
+using System.Collections;
 
 namespace Solitaire.Menu
 {
     [Serializable]
-    public class MenuHandle : MonoBehaviour, IPointerClickHandler
+    public class MenuHandle : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IDragHandler
     {
         [SerializeField]
         private RectTransform handleTransform;
@@ -16,34 +18,99 @@ namespace Solitaire.Menu
         private RectTransform parentTransform;
         [SerializeField]
         private bool shown = false;
+        [SerializeField]
         private bool inDrag = false;
 
-        private void Move()
+        private Canvas ParentCanvas { get { return GetComponentInParent<Canvas>(); } }
+
+        private MinMax HandleBounds()
         {
-            var parentMinMax = parentTransform.WorldMinMax();
+            var parent = parentTransform.WorldMinMax();
+            var handle = handleTransform.WorldMinMax();
 
-            float x;
+            return new MinMax {
+                minX = parent.minX,
+                maxX = parent.maxX - handleTransform.Dimensions().x,
+                minY = menuTransform.position.y,
+                maxY = menuTransform.position.y
+            };
+        }
+        
+        private void Awake()
+        {
+            StartCoroutine(MoveNextFrame());
+        }
+        public IEnumerator MoveNextFrame()
+        {
+            // Defer this one frame so everything has
+            // dinemensions etc
+            yield return new WaitForEndOfFrame();
+            Move();
+        }
 
-            if (shown)
-                x = parentMinMax.minX;
-            else
-                x = parentMinMax.maxX - handleTransform.Dimensions().x;
+        public void Move()
+        {
+            var bounds = HandleBounds();
 
             menuTransform.position = new Vector2(
-                x, menuTransform.position.y
+                shown ? bounds.minX : bounds.maxX,
+                menuTransform.position.y
             );
         }
 
-        private void Update()
+        public void OnPointerDown(PointerEventData eventData)
         {
-            if (!inDrag)
-                Move();
+            inDrag = false;
         }
 
-        public void OnPointerClick(PointerEventData eventData)
+        public void OnDrag(PointerEventData eventData)
         {
-            shown = !shown;
+            inDrag = true;
+
+            bool inPlane;
+            Vector2 pointer = eventData.WorldPosition(ParentCanvas, out inPlane);
+
+            if (inPlane)
+            {
+                var bounds = HandleBounds();
+                var handleDimensions = handleTransform.Dimensions();
+
+                float x = Mathf.Clamp(
+                    pointer.x - (handleDimensions.x / 2),
+                    bounds.minX, bounds.maxX
+                );
+
+                menuTransform.position = new Vector2(x, menuTransform.position.y);
+            }
+            else
+                Debug.LogError("Argh!!");
+        }
+
+        public void OnPointerUp(PointerEventData eventData)
+        {
+            if (inDrag)
+            {
+                shown = HandlePosition();
+                inDrag = false;
+            }
+            else
+                shown = !shown;
+
             Move();
+        }
+
+        private bool HandlePosition()
+        {
+            // Left is lesser, show. Right is greater, hide
+            var bounds = HandleBounds();
+            var x = menuTransform.position.x;
+            
+            // Which extreme is closer?
+            float distanceFromShow = x - bounds.minX;
+            float distanceFromHide = bounds.maxX - x;
+
+            shown = distanceFromHide > distanceFromShow;
+            return shown;
         }
     }
 }
