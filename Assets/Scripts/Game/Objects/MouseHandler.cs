@@ -51,8 +51,12 @@ namespace Solitaire.Game.Objects
             if (handling != null)
                 return;
 
-			SetBehaviour (handled);
-			OnDown(eventData);
+            if (!handled.AcceptMouseEvents)
+                return;
+
+            SetBehaviour(handled);
+
+            OnDown(eventData);
 		}
         private static void OnDown(PointerEventData eventData)
         {

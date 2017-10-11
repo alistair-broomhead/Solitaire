@@ -95,7 +95,7 @@ namespace Solitaire.Game
                     var info = cardStore.Get(card);
 
                     info.MoveTo(positionsInStack[j].transform);
-                    info.Behaviour.acceptMouseEvents = card.faceUp;
+                    info.Behaviour.acceptMouseEvents = true;
                 }
             }
         }

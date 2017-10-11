@@ -53,6 +53,16 @@ namespace Solitaire.Game.Objects.Card {
 
         // Is this object currently accepting mouse events?
         public bool acceptMouseEvents = false;
+        public bool AcceptMouseEvents
+        {
+            get
+            {
+                return acceptMouseEvents && (
+                    gameCard.faceUp ||
+                    Game.Instance.options.cheatMoveFaceDown
+                );
+            }
+        }
 
         public void OnPointerDown(PointerEventData eventData)
         {
